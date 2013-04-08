@@ -155,6 +155,7 @@ class DbPump
 
     table_dataset = options.db[table_name]
     min, max = table_dataset.select{[min(id), max(id)]}.first.values
+    return unless min && max
     # could possibly overrride Dataset#paginate(page_no, page_size, record_count=nil)
     # TODO definitely need to refactor this
 
