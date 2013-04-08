@@ -147,7 +147,7 @@ class DbPump
   end
 
   # could use this for integer pks
-  def min_max_dump
+  def min_max_dump( table_name, options = {} )
     # select max(id), min(id) from patents
     # and then split that up into 10000 size chunks. Not really important if there aren't exactly 10000
     options = OpenStruct.new( {io: STDOUT, page_size: 10000, dry_run: false}.merge( options.to_h ) )
