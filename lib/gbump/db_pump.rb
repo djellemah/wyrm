@@ -162,7 +162,7 @@ class DbPump
 
     # will always include the last item because
     (min..max).step(options.page_size).each do |offset|
-      page = table_dataset.where( id: offset...(offset+options.page_size) ).order( *pk )
+      page = table_dataset.where( id: offset...(offset+options.page_size) )
       logger.info page.sql
       page.each do |row|
         unless options[:dry_run]
