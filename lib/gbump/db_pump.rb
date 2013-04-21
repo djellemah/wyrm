@@ -11,7 +11,7 @@ Sequel.extension :migration, :schema_dumper, :pagination
 
 # TODO need to version the dumps, or something like that.
 class DbPump
-  class Respondent
+  class RespondsTo
     def initialize( *methods )
       @methods = methods
     end
@@ -28,7 +28,7 @@ class DbPump
     when :marshal; MarshalCodec.new
     when Class
       codec.new
-    when Respondent.new( :encode, :decode )
+    when RespondsTo.new( :encode, :decode )
       codec
     else
       raise "unknown codec #{codec}"
