@@ -2,9 +2,14 @@
 # one is the src db, the other is the dumped files
 # And the one that transfers live is another version
 class DumpSchema
-  def initialize( src_db )
+  def initialize( src_db, container = nil, options = {} )
+    @options = {:codec => :marshal}.merge( options )
+
     @src_db = src_db
+    @container = Pathname(container)
   end
+
+  attr_reader :src_db, :container, :codec
 
   def schema_migration
     @schema_migration ||= src_db.dump_schema_migration(:indexes=>false, :same_db => same_db)
@@ -39,8 +44,6 @@ class DumpSchema
     EOF
   end
 
-  attr_reader :src_db
-
   def same_db
     false
   end
@@ -49,7 +52,7 @@ class DumpSchema
     @logger ||= Logger.new STDERR
   end
 
-  def dump_schema( container, options = {codec: :marshal} )
+  def dump_schema( container )
     (container + '001_schema.rb').open('w') do |io|
       io.write schema_migration
     end
@@ -95,8 +98,7 @@ class DumpSchema
     fio.close unless fio.closed?
   end
 
-  def dump_tables( container, options = {:codec => :marshal} )
-    container = Pathname(container)
+  def dump_tables
     db_pump = DbPump.new( options[:codec] )
 
     src_db.tables.each do |table_name|
