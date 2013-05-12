@@ -98,8 +98,9 @@ class DumpSchema
     fio.close unless fio.closed?
   end
 
+class DumpSchema
   def dump_tables
-    db_pump = DbPump.new( options[:codec] )
+    db_pump = DbPump.new( @options[:codec] )
 
     src_db.tables.each do |table_name|
       filename = container + "#{table_name}.dbp.bz2"
