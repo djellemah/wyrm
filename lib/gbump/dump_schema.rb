@@ -52,7 +52,7 @@ class DumpSchema
     @logger ||= Logger.new STDERR
   end
 
-  def dump_schema( container )
+  def dump_schema
     (container + '001_schema.rb').open('w') do |io|
       io.write schema_migration
     end
