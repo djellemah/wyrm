@@ -1,3 +1,3 @@
-module Gbump
+module Wyrm
   VERSION = "0.1.0"
 end

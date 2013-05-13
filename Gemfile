@@ -4,5 +4,5 @@ source 'file:///var/cache/rubygems'
 gem 'sequel'
 gem 'fastandand'
 
-# Specify your gem's dependencies in gbump.gemspec
+# Specify your gem's dependencies in wyrm.gemspec
 gemspec

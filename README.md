@@ -1,4 +1,4 @@
-# Gbump
+# Wyrm
 
 Transfer data from one database to another
 
@@ -6,7 +6,7 @@ Transfer data from one database to another
 
 Add this line to your application's Gemfile:
 
-    gem 'gbump'
+    gem 'wyrm'
 
 And then execute:
 
@@ -14,7 +14,7 @@ And then execute:
 
 Or install it yourself as:
 
-    $ gem install gbump
+    $ gem install wyrm
 
 ## Usage
 
