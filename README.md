@@ -41,7 +41,7 @@ require 'pathname'
 
 # on the source host
 # dump tables from mysql
-require 'gbump/dump_schema'
+require 'wyrm/dump_schema'
 src_db = Sequel.connect "mysql2://localhost/lots"
 ds = DumpSchema.new src_db, Pathname('/tmp/lots')
 ds.dump_schema
@@ -54,7 +54,7 @@ ds.dump_tables
 
 # on the destination host
 # restore tables to postgres
-require 'gbump/restore_schema'
+require 'wyrm/restore_schema'
 dst_db = Sequel.connect "postgres://localhost/lots"
 rs = RestoreSchema.new dst_db, Pathname('/var/data/lots')
 rs.create
