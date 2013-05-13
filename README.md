@@ -1,6 +1,18 @@
 # Wyrm
 
-Transfer data from one database to another
+Transfer data from one database to another. Has been used to dump > 100M dbs,
+and one 850G db. Should theoretically work for any dbs supported by Sequel.
+
+Currently transfers tables and views only. Does not attempt to transfer
+stored procs, permissions, triggers etc.
+
+Works best for tables that have single numeric primary keys, but should also
+handle compound primary keys and tables without primary keys.
+
+Wyrm because:
+
+- I like dragons
+- I can have a Wyrm::Hole to transfer data through :-D
 
 ## Installation
 
@@ -16,9 +28,39 @@ Or install it yourself as:
 
     $ gem install wyrm
 
+Make sure you install the db gems, typically
+
+    $ gem install pg mysql2
+
 ## Usage
 
-TODO: Write usage instructions here
+This is mostly a toolkit right now. To transfer from mysql to postgres do:
+```ruby
+require 'sequel'
+require 'pathname'
+
+# on the source host
+# dump tables from mysql
+require 'gbump/dump_schema'
+src_db = Sequel.connect "mysql2://localhost/lots"
+ds = DumpSchema.new src_db, Pathname('/tmp/lots')
+ds.dump_schema
+
+# this might take a while ;-)
+ds.dump_tables
+
+# transfer data
+# rsync -zvar /tmp/lots user@host:/var/data/
+
+# on the destination host
+# restore tables to postgres
+require 'gbump/restore_schema'
+dst_db = Sequel.connect "postgres://localhost/lots"
+rs = RestoreSchema.new dst_db, Pathname('/var/data/lots')
+rs.create
+rs.restore_tables
+rs.index
+```
 
 ## Contributing
 
