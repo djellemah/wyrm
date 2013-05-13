@@ -49,8 +49,8 @@ ds.dump_schema
 # this might take a while ;-)
 ds.dump_tables
 
-# transfer data
-# rsync -zvar /tmp/lots user@host:/var/data/
+# transfer data. Already compressed, so no -z
+# rsync -var /tmp/lots user@host:/var/data/
 
 # on the destination host
 # restore tables to postgres
