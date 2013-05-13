@@ -1,10 +1,16 @@
-# There are actually 2 sources for this:
-# one is the src db, the other is the dumped files
-# And the one that transfers live is another version
+require 'logger'
+
+# Load a schema from a set of dump files (from DumpSchema)
+# and restore the table data
+#  dst_db = Sequel.connect "postgres://localhost:5454/lots"
+#  rs = RestoreSchema.new dst_db, Pathname('/var/data/lots')
+#  rs.create
+#  rs.restore_tables
 class RestoreSchema
-  def initialize( container, dst_db )
+  def initialize( dst_db, container )
     @container = container
     @dst_db = dst_db
+    @options = {:codec => :marshal}
     load_migrations @container
   end
 
@@ -43,7 +49,7 @@ class RestoreSchema
     db_pump.from_bz2 table_file, dst_db, table_name
   end
 
-  def restore_tables( container, options = {:codec => :marshal} )
+  def restore_tables
     db_pump = DbPump.new( options[:codec] )
     table_files = Pathname.glob Pathname(container) + '*dbp.bz2'
     table_files.sort_by{|tf| tf.stat.size}.each{|table_file| restore_one_table table_file, db_pump}

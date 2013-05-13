@@ -1,6 +1,8 @@
-# There are actually 2 sources for this:
-# one is the src db, the other is the dumped files
-# And the one that transfers live is another version
+# Dump a schema and compressed data from a db to a set of files
+#  src_db = Sequel.connect "postgres://localhost:5454/lots"
+#  ds = DumpSchema.new src_db, Pathname('/var/data/lots')
+#  ds.dump_schema
+#  ds.dump_tables
 class DumpSchema
   def initialize( src_db, container = nil, options = {} )
     @options = {:codec => :marshal}.merge( options )
@@ -98,7 +100,6 @@ class DumpSchema
     fio.close unless fio.closed?
   end
 
-class DumpSchema
   def dump_tables
     db_pump = DbPump.new( @options[:codec] )
 
