@@ -1,4 +1,5 @@
-source 'https://rubygems.org'
+# source 'https://rubygems.org'
+source 'file:///var/cache/rubygems'
 
 gem 'sequel'
 gem 'fastandand'
