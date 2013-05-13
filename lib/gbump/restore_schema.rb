@@ -15,6 +15,13 @@ class RestoreSchema
   end
 
   attr_reader :dst_db
+  attr_reader :options
+  attr_reader :container
+  attr_reader :schema_migration, :index_migration
+
+  def logger
+    @logger ||= Logger.new STDERR
+  end
 
   def load_migrations( container )
     @schema_migration = (container + '001_schema.rb').read
