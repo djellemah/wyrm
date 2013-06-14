@@ -1,17 +1,33 @@
+require 'logger'
+require 'wyrm/db_pump'
+
+class Object
+  def call_or_self( maybe_callable )
+    if maybe_callable.respond_to? :call
+      maybe_callable.call( self )
+    else
+      maybe_callable
+    end
+  end
+end
+
 # Dump a schema and compressed data from a db to a set of files
 #  src_db = Sequel.connect "postgres://localhost:5454/lots"
 #  ds = DumpSchema.new src_db, Pathname('/var/data/lots')
 #  ds.dump_schema
 #  ds.dump_tables
 class DumpSchema
-  def initialize( src_db, container = nil, options = {} )
-    @options = {:codec => :marshal}.merge( options )
-
+  def initialize( src_db, container = nil, pump: nil )
     @src_db = src_db
     @container = Pathname(container)
+    @pump = make_pump( pump )
   end
 
-  attr_reader :src_db, :container, :codec
+  attr_reader :src_db, :container, :pump
+
+  def make_pump( pump_thing )
+    call_or_self(pump_thing) || DbPump.new( src_db, nil )
+  end
 
   def schema_migration
     @schema_migration ||= src_db.dump_schema_migration(:indexes=>false, :same_db => same_db)
@@ -72,8 +88,7 @@ class DumpSchema
     end
   end
 
-  def dump_one_table( table_name, pathname, db_pump )
-    logger.info "dumping #{table_name} to #{pathname}"
+  def open_bz2( pathname )
     fio = pathname.open('w')
     # open subprocess in read-write mode
     zio = IO.popen( "pbzip2 -z", 'r+' )
@@ -86,8 +101,7 @@ class DumpSchema
       end
     end
 
-    # generate the dump
-    db_pump.dump table_name, db: src_db, io: zio
+    yield zio
 
     # signal the copier thread to stop
     zio.close_write
@@ -101,11 +115,15 @@ class DumpSchema
   end
 
   def dump_tables
-    db_pump = DbPump.new( @options[:codec] )
-
     src_db.tables.each do |table_name|
       filename = container + "#{table_name}.dbp.bz2"
-      dump_one_table table_name, filename, db_pump
+      logger.info "dumping #{table_name} to #{filename}"
+      open_bz2 filename do |zio|
+        # generate the dump
+        pump.table_name = table_name
+        pump.io = zio
+        pump.dump
+      end
     end
   end
 end

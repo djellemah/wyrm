@@ -27,9 +27,25 @@ class DbPump
     self.io = io
     self.page_size = page_size
     self.dry_run = dry_run
+    yield self if block_given?
   end
 
-  attr_accessor :db, :table_name, :io, :page_size, :dry_run
+  attr_accessor :io, :page_size, :dry_run
+
+  # These affect cached values
+  attr_reader :db, :table_name
+
+  def table_name=( name_sym )
+    @primary_keys = nil
+    @table_dataset = nil
+    @table_name = name_sym
+  end
+
+  def db=( other_db )
+    @primary_keys = nil
+    @table_dataset = nil
+    @db = other_db
+  end
 
   def dry_run?; dry_run; end
 
