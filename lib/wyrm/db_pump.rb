@@ -245,7 +245,7 @@ class DbPump
 
   def self.from_bz2( filename, db, table_name, options = {} )
     IO.popen( "pbzip2 -d -c #{filename}" ) do |io|
-      dbpump = DbPump.new db, table_name, io
+      dbpump = DbPump.new db, table_name, io: io
       dbpump.restore
     end
   end
