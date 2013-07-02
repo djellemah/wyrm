@@ -17,7 +17,7 @@ class RestoreSchema
   attr_reader :dst_db
   attr_reader :options
   attr_reader :container
-  attr_reader :schema_migration, :index_migration
+  attr_reader :schema_migration, :index_migration, :fk_migration
 
   def logger
     @logger ||= Logger.new STDERR
