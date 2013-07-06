@@ -18,6 +18,7 @@ end
 #  ds.dump_tables
 class DumpSchema
   def initialize( src_db, container = nil, pump: nil )
+    src_db.extension :schema_dumper
     @src_db = src_db
     @container = Pathname(container)
     @pump = make_pump( pump )

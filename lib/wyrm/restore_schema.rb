@@ -1,4 +1,5 @@
 require 'logger'
+require 'wyrm/db_pump'
 
 # Load a schema from a set of dump files (from DumpSchema)
 # and restore the table data

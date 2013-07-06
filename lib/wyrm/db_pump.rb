@@ -4,7 +4,7 @@ require 'ostruct'
 require 'logger'
 require 'fastandand'
 
-Sequel.extension :migration, :schema_dumper, :pagination
+Sequel.extension :migration
 
 # TODO possibly use Gem::Package::TarWriter to write tar files
 # TODO when restoring, could use a SizeQueue to make sure the db is kept busy
@@ -45,6 +45,7 @@ class DbPump
     @primary_keys = nil
     @table_dataset = nil
     @db = other_db
+    @db.extension :pagination
   end
 
   def dry_run?; dry_run; end
