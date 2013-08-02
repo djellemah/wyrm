@@ -84,7 +84,7 @@ class DumpSchema
       io.write index_migration
     end
 
-    (container + '004_foreign keys.rb').open('w') do |io|
+    (container + '004_foreign_keys.rb').open('w') do |io|
       io.write fk_migration
     end
   end

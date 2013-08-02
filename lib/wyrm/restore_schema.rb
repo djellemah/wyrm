@@ -27,7 +27,7 @@ class RestoreSchema
   def load_migrations( container )
     @schema_migration = (container + '001_schema.rb').read
     @index_migration = (container + '003_indexes.rb').read
-    @fk_migration = (container + '004_foreign keys.rb').read
+    @fk_migration = (container + '004_foreign_keys.rb').read
   end
 
   # create indexes and foreign keys, and reset sequences
