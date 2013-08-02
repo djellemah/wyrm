@@ -115,16 +115,22 @@ class DumpSchema
     fio.close unless fio.closed?
   end
 
+  def dump_table( table_name )
+    filename = container + "#{table_name}.dbp.bz2"
+    logger.info "dumping #{table_name} to #{filename}"
+    open_bz2 filename do |zio|
+      # generate the dump
+      pump.table_name = table_name
+      pump.io = zio
+      pump.dump
+    end
+  rescue
+    logger.error "failed dumping #{table_name}: #{$!.message}"
+  end
+
   def dump_tables
     src_db.tables.each do |table_name|
-      filename = container + "#{table_name}.dbp.bz2"
-      logger.info "dumping #{table_name} to #{filename}"
-      open_bz2 filename do |zio|
-        # generate the dump
-        pump.table_name = table_name
-        pump.io = zio
-        pump.dump
-      end
+      dump_table table_name
     end
   end
 end
