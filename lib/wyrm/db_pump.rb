@@ -154,7 +154,7 @@ class DbPump
     # could possibly overrride Dataset#paginate(page_no, page_size, record_count=nil)
     0.step(table_dataset.count, page_size).each do |offset|
       limit_dataset = table_dataset.select( *primary_keys ).limit( page_size, offset ).order( *primary_keys )
-      page = table_dataset.join( limit_dataset, Hash[ primary_keys.map{|f| [f,f]} ] ).order( *primary_keys ).qualify_to(table_name)
+      page = table_dataset.join( limit_dataset, Hash[ primary_keys.map{|f| [f,f]} ] ).order( *primary_keys ).qualify(table_name)
       logger.info page.sql
       page.each do |row|
         unless dry_run?
