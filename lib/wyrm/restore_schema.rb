@@ -27,7 +27,7 @@ class RestoreSchema
     @logger ||= Logger.new STDERR
   end
 
-  def load_migrations( container )
+  def load_migrations
     @schema_migration = (container + '001_schema.rb').read
     @index_migration = (container + '003_indexes.rb').read
     @fk_migration = (container + '004_foreign_keys.rb').read
