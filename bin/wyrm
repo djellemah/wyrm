@@ -1,0 +1,36 @@
+#! /usr/bin/env ruby
+
+require 'pathname'
+require 'uri'
+
+def restore( db, directory )
+  require 'wyrm/restore_schema'
+  rs = RestoreSchema.new db, directory
+  rs.create
+  rs.restore_tables
+  rs.index
+end
+
+def dump( db, directory )
+  require 'wyrm/dump_schema'
+  ds = DumpSchema.new db, directory
+  ds.dump_schema
+  ds.dump_tables
+end
+
+if ARGV.empty?
+  puts "Provide source and destination"
+  puts "Either can be a sequel db string or a directory"
+end
+
+src, dst = ARGV.map{|arg| URI.parse arg}
+
+if src.scheme && Pathname(dst.to_s).exist?
+  # src is a db path, so dump from it
+  dump( src.to_s, dst.to_s )
+elsif dst.scheme && Pathname(src.to_s).exist?
+  # dst is a path and src is a url, so restore
+  restore( dst.to_s, src.to_s )
+else
+  puts "Don't know how to handle #{src} -> #{dst}"
+end
