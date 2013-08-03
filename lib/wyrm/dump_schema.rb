@@ -1,15 +1,5 @@
 require 'logger'
-require 'wyrm/db_pump'
-
-class Object
-  def call_or_self( maybe_callable )
-    if maybe_callable.respond_to? :call
-      maybe_callable.call( self )
-    else
-      maybe_callable
-    end
-  end
-end
+require 'wyrm/pump_maker'
 
 # Dump a schema and compressed data from a db to a set of files
 #  src_db = Sequel.connect "postgres://localhost:5454/lots"
@@ -17,18 +7,17 @@ end
 #  ds.dump_schema
 #  ds.dump_tables
 class DumpSchema
+  include PumpMaker
+
   def initialize( src_db, container = nil, pump: nil )
-    src_db.extension :schema_dumper
-    @src_db = src_db
-    @container = Pathname(container)
-    @pump = make_pump( pump )
+    @src_db = maybe_deebe src_db
+    @container = Pathname.new container
+    @pump = make_pump( @src_db, pump )
+
+    @src_db.extension :schema_dumper
   end
 
   attr_reader :src_db, :container, :pump
-
-  def make_pump( pump_thing )
-    call_or_self(pump_thing) || DbPump.new( src_db, nil )
-  end
 
   def schema_migration
     @schema_migration ||= src_db.dump_schema_migration(:indexes=>false, :same_db => same_db)

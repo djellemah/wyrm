@@ -1,5 +1,5 @@
 require 'logger'
-require 'wyrm/db_pump'
+require 'wyrm/pump_maker'
 
 # Load a schema from a set of dump files (from DumpSchema)
 # and restore the table data
@@ -8,15 +8,18 @@ require 'wyrm/db_pump'
 #  rs.create
 #  rs.restore_tables
 class RestoreSchema
-  def initialize( dst_db, container )
-    @container = container
-    @dst_db = dst_db
-    @options = {:codec => :marshal}
-    load_migrations @container
+  include PumpMaker
+
+  def initialize( dst_db, container, pump: nil )
+    @container = Pathname.new container
+    @dst_db = maybe_deebe dst_db
+    @pump = make_pump( @dst_db, pump )
+
+    load_migrations
   end
 
+  attr_reader :pump
   attr_reader :dst_db
-  attr_reader :options
   attr_reader :container
   attr_reader :schema_migration, :index_migration, :fk_migration
 
