@@ -12,9 +12,16 @@ handle compound primary keys and tables without primary keys.
 Wyrm because:
 
 - I like dragons
-- I can have a Wyrm::Hole to transfer data through :-D
+- I can (eventually) have a Wyrm::Hole to transfer data through :-D
+
+## Dependencies
+
+You must have a working
+[pbzip2](http://compression.ca/pbzip2/ "Will use all your cores")
+on your path.
 
 ## Installation
+
 
 Add this line to your application's Gemfile:
 
@@ -30,36 +37,50 @@ Or install it yourself as:
 
 Make sure you install the db gems, typically
 
-    $ gem install pg mysql2
+    $ gem install pg sequel_pg mysql2
 
 ## Usage
 
-This is mostly a toolkit right now. To transfer from mysql to postgres do:
-```ruby
-require 'sequel'
-require 'pathname'
+### CLI
 
-# on the source host
-# dump tables from mysql
-require 'wyrm/dump_schema'
-src_db = Sequel.connect "mysql2://localhost/lots"
-ds = DumpSchema.new src_db, Pathname('/tmp/lots')
-ds.dump_schema
+Very basic cli at this point.
 
-# this might take a while ;-)
-ds.dump_tables
+From the source db to the file system
 
-# transfer data. Already compressed, so no -z
-# rsync -var /tmp/lots user@host:/var/data/
+    $ wyrm mysql2://localhost/beeg_data_bays /tmp/lots_fs_space
 
-# on the destination host
-# restore tables to postgres
+Optionally transfer data. Already compressed, so no -z
+
+    $ rsync -var /tmp/lots_fs_space user@host:/tmp/lots_fs_space
+
+On the destination host
+
+    $ wyrm /tmp/lots_fs_space postgres://localhost/betta_dee_bee
+
+### irb / pry
+
+For restoring. dump will be similar.
+
+``` ruby
 require 'wyrm/restore_schema'
-dst_db = Sequel.connect "postgres://localhost/lots"
-rs = RestoreSchema.new dst_db, Pathname('/var/data/lots')
+rs = RestoreSchema.new 'postgres://postgres@localhost/your_db', '/mnt/disk/wyrm'
 rs.create
 rs.restore_tables
 rs.index
+```
+
+Or for the lower-level stuff
+
+``` ruby
+require 'sequel'
+require 'wyrm/db_pump'
+
+db = Sequel.connect 'postgres://postgres@localhost/other_db'
+dbp = DbPump.new db, :things
+dbp.open_bz2 '/mnt/disk/wyrm/things.dbp.bz2'
+dbp.each_row do |row|
+  puts row.inspect
+end
 ```
 
 ## Contributing
