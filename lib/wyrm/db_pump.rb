@@ -48,6 +48,12 @@ class DbPump
 
     # add extensions
     @db.extension :pagination
+
+    # turn on postgres streaming if available
+    if defined?( Sequel::Postgres ) && Sequel::Postgres.supports_streaming?
+      logger.info "Turn streaming on for postgres"
+      @db.extension :pg_streaming
+    end
   end
 
   # return an object that responds to ===
@@ -165,6 +171,26 @@ class DbPump
     end
   end
 
+  def stream_dump( &encode_block )
+    logger.info "using result set streaming"
+
+    # we want to output progress every page_size records,
+    # without doing a records_count % page_size every iteration
+    # so define an external enumerator
+    records_count = 0
+    enum = table_dataset.stream.enum_for
+    loop do
+      begin
+        page_size.times do
+          encode_block.call enum.next
+          records_count += 1
+        end
+      ensure
+        logger.info "#{records_count} from #{table_dataset.sql}"
+      end
+    end
+  end
+
   # Dump the serialization of the table to the specified io.
   # TODO need to also dump a first row containing useful stuff:
   # - source table name
@@ -185,6 +211,8 @@ class DbPump
   def _dump( &encode_block )
     return enum_for(__method__) unless block_given?
     case
+    when table_dataset.respond_to?( :stream )
+      stream_dump &encode_block
     when primary_keys.empty?
       paginated_dump &encode_block
     when primary_keys.all?{|i| i == :id }
@@ -202,7 +230,6 @@ class DbPump
     false
   end
 
-  # TODO lazy evaluation / streaming
   # TODO don't generate the full insert, ie leave out the fields
   # because we've already checked that the columns and the table
   # match.

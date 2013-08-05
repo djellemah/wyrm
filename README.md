@@ -3,16 +3,23 @@
 Transfer data from one database to another. Has been used to dump > 100M dbs,
 and one 850G db. Should theoretically work for any dbs supported by Sequel.
 
+Dumps are compressed with bz2, using pbzip2. Fast *and* small :-D For example:
+mysqldump | bzip2 for a certain 850G db comes to 127G. With wyrm it
+comes to 134G.
+
 Currently transfers tables and views only. Does not attempt to transfer
 stored procs, permissions, triggers etc.
 
-Works best for tables that have single numeric primary keys, but should also
-handle compound primary keys and tables without primary keys.
+Handles tables with a single numeric key, single non-numeric key, and no
+primary key. Haven't tried with compound primary key.
+
+Depending on table keys will use different strategies to keep memory usage small.
+Will use result set streaming if available.
 
 Wyrm because:
 
 - I like dragons
-- I can (eventually) have a Wyrm::Hole to transfer data through :-D
+- I can (eventually) have a Wyrm::Hole to transfer data through ;-)
 
 ## Dependencies
 
@@ -37,7 +44,7 @@ Or install it yourself as:
 
 Make sure you install the db gems, typically
 
-    $ gem install pg sequel_pg mysql2
+    $ gem install pg sequel_pg mysql2 sqlite3
 
 ## Usage
 
