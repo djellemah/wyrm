@@ -44,15 +44,11 @@ class DumpSchema
       io.write schema_migration
     end
 
-    (container + '002_populate_tables.rb').open('w') do |io|
-      io.write restore_migration
-    end
-
-    (container + '003_indexes.rb').open('w') do |io|
+    (container + '002_indexes.rb').open('w') do |io|
       io.write index_migration
     end
 
-    (container + '004_foreign_keys.rb').open('w') do |io|
+    (container + '003_foreign_keys.rb').open('w') do |io|
       io.write fk_migration
     end
   end
