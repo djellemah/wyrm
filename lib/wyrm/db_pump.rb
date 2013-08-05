@@ -243,18 +243,14 @@ class DbPump
     rows_restored
   end
 
-  # this doesn't really belong here, but it will do for now.
-  def open_bz2( filename )
-    io.andand.close if io != STDOUT && !io.andand.closed?
-    self.io = IO.popen( "pbzip2 -d -c #{filename}" )
-  end
-
-  # enumerate through the given io at its current position
+  # Enumerate through the given io at its current position
+  # TODO don't check for io.eof here, leave that to the codec
   def each_row
     return enum_for(__method__) unless block_given?
     yield codec.decode( io ) until io.eof?
   end
 
+  # Enumerate sql insert statements from the dump
   def insert_sql_each
     return enum_for(__method__) unless block_given?
     each_row do |row|

@@ -74,15 +74,29 @@ class RestoreSchema
     logger.info "restoring from #{table_file}"
     pump.table_name = table_file.basename.sub_ext('').sub_ext('').to_s.to_sym
     # TODO check if table has been restored already, and has the correct rows,
-    # otherwise pass in a start row.
-    IO.popen( "pbzip2 -d -c #{table_file}" ) do |io|
+    open_bz2 table_file do |io|
       pump.io = io
       pump.restore
     end
   end
 
+  # open a dbp.bz2 file and either yield or return an io of the uncompressed contents
+  def open_bz2( table_name, &block )
+    table_file =
+    case table_name
+    when Symbol
+      container + "#{table_name}.dbp.bz2"
+    when Pathname
+      table_name
+    else
+      raise "Don't know what to do with #{table_name.inspect}"
+    end
+
+    IO.popen "pbzip2 -d -c #{table_file}", &block
+  end
+
   def restore_tables
-    table_files = Pathname.glob Pathname(container) + '*dbp.bz2'
+    table_files = Pathname.glob container + '*.dbp.bz2'
     table_files.sort_by{|tf| tf.stat.size}.each{|table_file| restore_table table_file}
   end
 end

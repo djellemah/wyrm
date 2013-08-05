@@ -84,7 +84,7 @@ class DumpSchema
     fio.close unless fio.closed?
   end
 
-  def dump_table( table_name )
+  def dump_table( table_name, &io_block )
     pump.table_name = table_name
     if pump.table_dataset.empty?
       logger.info "No records in #{table_name}"
