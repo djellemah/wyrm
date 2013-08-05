@@ -31,27 +31,6 @@ class DumpSchema
     @fk_migration ||= src_db.dump_foreign_key_migration(:same_db => same_db)
   end
 
-  def restore_migration
-    <<-EOF
-      require 'restore_migration'
-      Sequel.migration do
-        def db_pump
-        end
-
-        up do
-          restore_tables
-        end
-
-        down do
-          # from each table clear table
-          each_table do |table_name|
-            db_pump.restore table_name, io: io, db: db
-          end
-        end
-      end
-    EOF
-  end
-
   def same_db
     false
   end
@@ -96,7 +75,8 @@ class DumpSchema
     # signal the copier thread to stop
     zio.close_write
     logger.debug 'finished dumping'
-    # wait for copier thread to
+
+    # wait for copier thread to finish
     copier.join
     logger.debug 'stream copy thread finished'
   ensure

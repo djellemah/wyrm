@@ -68,7 +68,7 @@ class DbPump
     when quacks_like( :encode, :decode )
       codec_thing
     else
-      raise "unknown codec #{codec_thing}"
+      raise "unknown codec #{codec_thing.inspect}"
     end
   end
 
@@ -188,6 +188,11 @@ class DbPump
   end
 
   # TODO lazy evaluation / streaming
+  # TODO don't generate the full insert, ie leave out the fields
+  # because we've already checked that the columns and the table
+  # match.
+  # TODO generate column names in insert, they might still work
+  # if columns have been added to the db, but not the dump.
   # start_row is zero-based
   def restore( start_row: 0, filename: 'io' )
     columns = table_dataset.columns

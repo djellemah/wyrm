@@ -2,9 +2,9 @@ require 'logger'
 require 'wyrm/pump_maker'
 
 # Load a schema from a set of dump files (from DumpSchema)
-# and restore the table data
+# and restore the table data.
 #  dst_db = Sequel.connect "postgres://localhost:5454/lots"
-#  rs = RestoreSchema.new dst_db, Pathname('/var/data/lots')
+#  rs = RestoreSchema.new dst_db, '/var/data/lots'
 #  rs.create
 #  rs.restore_tables
 class RestoreSchema
@@ -69,7 +69,7 @@ class RestoreSchema
     eval( schema_migration ).apply dst_db, :up
   end
 
-  # assume the table name is the base name of table_file
+  # assume the table name is the base name of table_file pathname
   def restore_table( table_file )
     logger.info "restoring from #{table_file}"
     pump.table_name = table_file.basename.sub_ext('').sub_ext('').to_s.to_sym
