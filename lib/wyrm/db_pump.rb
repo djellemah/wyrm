@@ -112,15 +112,10 @@ class DbPump
 
   # TODO possibly use select from outer / inner join to
   # http://www.numerati.com/2012/06/26/reading-large-result-sets-with-hibernate-and-mysql/
-  # because mysql is useless
-  def paginated_dump
+  def paginated_dump( &encode_block )
     table_dataset.order(*primary_keys).each_page(page_size) do |page|
       logger.info page.sql
-      page.each do |row|
-        unless dry_run?
-          codec.encode row.values, io
-        end
-      end
+      page.each &encode_block
     end
   end
 
@@ -134,40 +129,19 @@ class DbPump
   #   inner join (select id from massive order by whatever limit m, n) limit
   #   on full.id = limit.id
   # order by full.whatever
-  def inner_dump
+  def inner_dump( &encode_block )
     # could possibly overrride Dataset#paginate(page_no, page_size, record_count=nil)
     0.step(table_dataset.count, page_size).each do |offset|
       limit_dataset = table_dataset.select( *primary_keys ).limit( page_size, offset ).order( *primary_keys )
       page = table_dataset.join( limit_dataset, Hash[ primary_keys.map{|f| [f,f]} ] ).order( *primary_keys ).qualify(table_name)
       logger.info page.sql
-      page.each do |row|
-        unless dry_run?
-          codec.encode row.values, io
-        end
-      end
+      page.each &encode_block
     end
   end
 
-  # TODO need to also dump a first row containing useful stuff:
-  # - source table name
-  # - number of rows
-  # - source db url
-  # - permissions?
-  # These should all be in one object that can be Marshall.load-ed easily.
-  def dump
-    case
-    when primary_keys.empty?
-      paginated_dump
-    when primary_keys.all?{|i| i == :id }
-      min_max_dump
-    else
-      inner_dump
-    end
-    io.flush
-  end
-
-  # could use this for integer pks
-  def min_max_dump
+  # Selects pages by a range of ids, using >= and <.
+  # Use this for integer pks
+  def min_max_dump( &encode_block )
     # select max(id), min(id) from patents
     # and then split that up into 10000 size chunks. Not really important if there aren't exactly 10000
     min, max = table_dataset.select{[min(id), max(id)]}.first.values
@@ -179,12 +153,44 @@ class DbPump
     (min..max).step(page_size).each do |offset|
       page = table_dataset.where( id: offset...(offset + page_size) )
       logger.info page.sql
-      page.each do |row|
-        unless dry_run?
-          codec.encode row.values, io
-        end
-      end
+      page.each &encode_block
     end
+  end
+
+  # Dump the serialization of the table to the specified io.
+  # TODO need to also dump a first row containing useful stuff:
+  # - source table name
+  # - number of rows
+  # - source db url
+  # - permissions?
+  # These should all be in one object that can be Marshall.load-ed easily.
+  def dump
+    _dump do |row|
+      codec.encode( row.values, io ) unless dry_run?
+    end
+    io.flush
+  end
+
+  # decide which kind of paged iteration will be best for this table.
+  # Return an iterator, or yield row hashes to the block
+  def _dump( &encode_block )
+    return enum_for(__method__) unless block_given?
+    case
+    when primary_keys.empty?
+      paginated_dump &encode_block
+    when primary_keys.all?{|i| i == :id }
+      min_max_dump &encode_block
+    else
+      inner_dump &encode_block
+    end
+  end
+
+  def dump_matches_columns?( row_enum, columns )
+    raise "schema mismatch" unless row_enum.peek.size == columns.size
+    true
+  rescue StopIteration
+    # peek threw a StopIteration, so there's no data
+    false
   end
 
   # TODO lazy evaluation / streaming
