@@ -202,14 +202,11 @@ class DbPump
   # start_row is zero-based
   def restore( start_row: 0, filename: 'io' )
     columns = table_dataset.columns
-    logger.info{ "inserting to #{table_name} #{columns.inspect}" }
-
-    # get the Enumerator
     row_enum = each_row
 
-    # check that columns match
-    raise "schema mismatch" if row_enum.peek.size != columns.size
+    return unless dump_matches_columns?( row_enum, columns )
 
+    logger.info{ "inserting to #{table_name} #{columns.inspect}" }
     rows_restored = 0
 
     if start_row != 0
