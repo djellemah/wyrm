@@ -12,7 +12,7 @@ end
 
 module PumpMaker
   def make_pump( db, pump_thing )
-    call_or_self(pump_thing) || DbPump.new( db, nil )
+    call_or_self(pump_thing) || DbPump.new( db: db )
   end
 
   def maybe_deebe( db_or_string )

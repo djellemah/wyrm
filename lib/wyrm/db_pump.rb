@@ -14,7 +14,7 @@ Sequel.extension :migration
 # be the codec that connects two DbPumps, for direct transfer?
 class DbPump
   # some codecs might ignore io, eg if a dbpump is talking to another dbpump
-  def initialize( db, table_name, io: STDOUT, codec: :marshal, page_size: 10000, dry_run: false )
+  def initialize( db: nil, table_name: nil, io: STDOUT, codec: :marshal, page_size: 10000, dry_run: false )
     self.codec = codec
     self.db = db
     self.table_name = table_name
