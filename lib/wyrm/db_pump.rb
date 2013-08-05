@@ -8,8 +8,6 @@ Sequel.extension :migration
 # TODO when restoring, could use a SizeQueue to make sure the db is kept busy
 
 # TODO need to version the dumps, or something like that.
-# TODO This really should be Wyrm::Hole. Or maybe Wyrm::Hole should
-# be the codec that connects two DbPumps, for direct transfer?
 # TODO looks like io should belong to codec. Hmm. Not sure.
 # TODO table_name table_dataset need some thinking about. Dataset would encapsulate both. But couldn't change db then, and primary_keys would be hard.
 class DbPump
@@ -124,8 +122,7 @@ class DbPump
     @table_dataset ||= db[table_name.to_sym]
   end
 
-  # TODO possibly use select from outer / inner join to
-  # http://www.numerati.com/2012/06/26/reading-large-result-sets-with-hibernate-and-mysql/
+  # Use limit / offset. Last fallback if there are no keys (or a compound primary key?).
   def paginated_dump( &encode_block )
     table_dataset.order(*primary_keys).each_page(page_size) do |page|
       logger.info page.sql
@@ -133,16 +130,17 @@ class DbPump
     end
   end
 
-  # have to use this for non-integer pks
+  # Use limit / offset, but not for all fields.
   # The idea is that large offsets are expensive in the db because the db server has to read
-  # through the data set to reach the required offset. So make that only ids, and then
-  # do the main select from the limited id list.
+  # through the data set to reach the required offset. So make that only ids need to be read,
+  # and then do the main select from the limited id list.
   # TODO could speed this up by have a query thread which runs the next page-query while
   # the current one is being written/compressed.
   # select * from massive as full
   #   inner join (select id from massive order by whatever limit m, n) limit
   #   on full.id = limit.id
   # order by full.whatever
+  # http://www.numerati.com/2012/06/26/reading-large-result-sets-with-hibernate-and-mysql/
   def inner_dump( &encode_block )
     # could possibly overrride Dataset#paginate(page_no, page_size, record_count=nil)
     0.step(table_dataset.count, page_size).each do |offset|
@@ -156,14 +154,14 @@ class DbPump
   # Selects pages by a range of ids, using >= and <.
   # Use this for integer pks
   def min_max_dump( &encode_block )
-    # select max(id), min(id) from patents
-    # and then split that up into 10000 size chunks. Not really important if there aren't exactly 10000
+    # select max(id), min(id) from table
+    # and then split that up into 10000 size chunks.
+    # Not really important if there aren't exactly 10000
     min, max = table_dataset.select{[min(id), max(id)]}.first.values
     return unless min && max
-    # could possibly overrride Dataset#paginate(page_no, page_size, record_count=nil)
-    # TODO definitely need to refactor this
 
-    # will always include the last item because
+    # will always include the last item because page_size will be
+    # bigger than max for the last page
     (min..max).step(page_size).each do |offset|
       page = table_dataset.where( id: offset...(offset + page_size) )
       logger.info page.sql
@@ -174,9 +172,10 @@ class DbPump
   def stream_dump( &encode_block )
     logger.info "using result set streaming"
 
-    # we want to output progress every page_size records,
-    # without doing a records_count % page_size every iteration
-    # so define an external enumerator
+    # I want to output progress every page_size records,
+    # without doing a records_count % page_size every iteration.
+    # So define an external enumerator
+    # TODO should really performance test the options here.
     records_count = 0
     enum = table_dataset.stream.enum_for
     loop do
@@ -261,7 +260,10 @@ class DbPump
       db.transaction do
         begin
           page_size.times do
-            # This skips all the checks in the Sequel code
+            # This skips all the checks in the Sequel code. Basically we want
+            # to generate the
+            #   insert into (field1,field2) values (value1,value2)
+            # statement as quickly as possible.
             sql = table_dataset.clone( columns: columns, values: row_enum.next ).send( :clause_sql, :insert )
             db.execute sql unless dry_run?
             rows_restored += 1
