@@ -1,8 +1,6 @@
 require 'sequel'
 require 'yaml'
-require 'ostruct'
 require 'logger'
-require 'fastandand'
 
 Sequel.extension :migration
 
@@ -12,6 +10,8 @@ Sequel.extension :migration
 # TODO need to version the dumps, or something like that.
 # TODO This really should be Wyrm::Hole. Or maybe Wyrm::Hole should
 # be the codec that connects two DbPumps, for direct transfer?
+# TODO looks like io should belong to codec. Hmm. Not sure.
+# TODO table_name table_dataset need some thinking about. Dataset would encapsulate both. But couldn't change db then, and primary_keys would be hard.
 class DbPump
   # some codecs might ignore io, eg if a dbpump is talking to another dbpump
   def initialize( db: nil, table_name: nil, io: STDOUT, codec: :marshal, page_size: 10000, dry_run: false )
@@ -42,20 +42,28 @@ class DbPump
 
   def db=( other_db )
     invalidate_cached_members
+
     @db = other_db
+    return unless other_db
+
+    # add extensions
     @db.extension :pagination
   end
 
   # return an object that responds to ===
   # which returns true if ==='s parameter
   # responds to all the methods
-  def quacks_like( *methods )
+  def self.quacks_like( *methods )
     @quacks_like ||= {}
     @quacks_like[methods] ||= Object.new.tap do |obj|
       obj.define_singleton_method(:===) do |instance|
         methods.all?{|m| instance.respond_to? m}
       end
     end
+  end
+
+  def quacks_like( *methods )
+    self.class.quacks_like( *methods )
   end
 
   def codec=( codec_thing )
@@ -168,6 +176,7 @@ class DbPump
     _dump do |row|
       codec.encode( row.values, io ) unless dry_run?
     end
+  ensure
     io.flush
   end
 
