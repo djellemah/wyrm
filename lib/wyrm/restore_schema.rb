@@ -14,23 +14,39 @@ class RestoreSchema
     @container = Pathname.new container
     @dst_db = maybe_deebe dst_db
     @pump = make_pump( @dst_db, pump )
-
-    load_migrations
   end
 
   attr_reader :pump
   attr_reader :dst_db
   attr_reader :container
-  attr_reader :schema_migration, :index_migration, :fk_migration
+
+  # sequel wants migrations numbered, but it's a bit of an annoyance for this.
+  def find_single( glob )
+    candidates =Pathname.glob container + glob
+    raise "too many #{candidates.inspect} for #{glob}" unless candidates.size == 1
+    candidates.first
+  end
+
+  def schema_migration
+    @schema_migration ||= find_single( '*schema.rb' ).read
+  end
+
+  def index_migration
+    @index_migration ||= find_single( '*indexes.rb' ).read
+  end
+
+  def fk_migration
+    @fk_migration ||= find_single( '*foreign_keys.rb' ).read
+  end
+
+  def reload_migrations
+    @fk_migration = nil
+    @index_migration = nil
+    @schema_migration = nil
+  end
 
   def logger
     @logger ||= Logger.new STDERR
-  end
-
-  def load_migrations
-    @schema_migration = (container + '001_schema.rb').read
-    @index_migration = (container + '003_indexes.rb').read
-    @fk_migration = (container + '004_foreign_keys.rb').read
   end
 
   # create indexes and foreign keys, and reset sequences
