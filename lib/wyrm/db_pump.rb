@@ -4,9 +4,7 @@ require 'logger'
 
 Sequel.extension :migration
 
-# TODO possibly use Gem::Package::TarWriter to write tar files
 # TODO when restoring, could use a SizeQueue to make sure the db is kept busy
-
 # TODO need to version the dumps, or something like that.
 # TODO looks like io should belong to codec. Hmm. Not sure.
 # TODO table_name table_dataset need some thinking about. Dataset would encapsulate both. But couldn't change db then, and primary_keys would be hard.

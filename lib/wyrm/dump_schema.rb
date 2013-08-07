@@ -6,6 +6,7 @@ require 'wyrm/pump_maker'
 #  ds = DumpSchema.new src_db, Pathname('/var/data/lots')
 #  ds.dump_schema
 #  ds.dump_tables
+# TODO possibly use Gem::Package::TarWriter to write tar files
 class DumpSchema
   include PumpMaker
 
