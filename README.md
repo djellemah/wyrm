@@ -84,7 +84,7 @@ require 'wyrm/db_pump'
 
 db = Sequel.connect 'postgres://postgres@localhost/other_db'
 dbp = DbPump.new db, :things
-dbp.io = IO.popen "pbzip2 -d -c /mnt/disk/wyrm/things.dbp.bz2'
+dbp.io = IO.popen 'pbzip2 -d -c /mnt/disk/wyrm/things.dbp.bz2'
 dbp.each_row do |row|
   puts row.inspect
 end
