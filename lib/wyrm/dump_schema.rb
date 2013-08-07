@@ -56,7 +56,7 @@ class DumpSchema
     end
   end
 
-  def open_bz2( pathname )
+  def write_through_bz2( pathname )
     fio = pathname.open('w')
     # open subprocess in read-write mode
     zio = IO.popen( "pbzip2 -z", 'r+' )
@@ -93,7 +93,7 @@ class DumpSchema
     filename = container + "#{table_name}.dbp.bz2"
     logger.info "dumping #{table_name} to #{filename}"
 
-    open_bz2 filename do |zio|
+    write_through_bz2 filename do |zio|
       # generate the dump
       pump.io = zio
       pump.dump
