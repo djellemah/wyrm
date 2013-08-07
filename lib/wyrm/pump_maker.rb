@@ -1,6 +1,6 @@
 require 'wyrm/db_pump'
 
-class Object
+module PumpMaker
   def call_or_self( maybe_callable )
     if maybe_callable.respond_to? :call
       maybe_callable.call( self )
@@ -8,9 +8,7 @@ class Object
       maybe_callable
     end
   end
-end
 
-module PumpMaker
   def make_pump( db, pump_thing )
     call_or_self(pump_thing) || DbPump.new( db: db )
   end
