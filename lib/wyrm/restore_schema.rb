@@ -7,6 +7,9 @@ require 'wyrm/pump_maker'
 #  rs = RestoreSchema.new dst_db, '/var/data/lots'
 #  rs.create
 #  rs.restore_tables
+# TODO the problem with lazy loading the schema files is that
+# errors in indexes and foreign keys will only be picked up at the
+# end of they probably lengthy table restore process.
 class RestoreSchema
   include PumpMaker
 
