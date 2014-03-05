@@ -16,7 +16,12 @@ module PumpMaker
   def maybe_deebe( db_or_string )
     case db_or_string
     when String
-      Sequel.connect db_or_string
+      begin
+        Sequel.connect db_or_string
+      rescue Sequel::AdapterNotFound
+        puts "\nCan't find db driver for #{db_or_string}. It might work to do\n\n  gem install #{db_or_string.split(?:).first}\n\n"
+        exit(1)
+      end
     when Sequel::Database
       db_or_string
     else
