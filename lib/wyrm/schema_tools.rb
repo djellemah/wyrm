@@ -1,0 +1,70 @@
+Sequel.extension :migration
+
+# needs dst_db for mutate operations
+# and src_db for fetch operations
+module SchemaTools
+  def same_db
+    src_db == dst_db
+  end
+
+  def schema_migration
+    @schema_migration ||= src_db.dump_schema_migration(:indexes=>false, :same_db => same_db)
+  end
+
+  def index_migration
+    @index_migration ||= src_db.dump_indexes_migration(:same_db => same_db)
+  end
+
+  def fk_migration
+    @fk_migration ||= src_db.dump_foreign_key_migration(:same_db => same_db)
+  end
+
+  def drop_table_options
+    @drop_table_options ||=
+    begin
+      if dst_db.opts[:adapter] == 'postgres'
+        {cascade: true}
+      else
+        {}
+      end
+    end
+  end
+
+  # Delete given tables.
+  # Recurse if there are foreign keys preventing table deletion.
+  # This implementation will fail for tables with mutual foreign keys.
+  # TODO maybe this should use the schema down migration?
+  def drop_tables( tables )
+    foreign_keyed_tables = []
+    tables.each do |table_name|
+      begin
+        logger.debug "dropping #{table_name}"
+        dst_db.drop_table? table_name, drop_table_options
+
+      rescue Sequel::ForeignKeyConstraintViolation => ex
+        foreign_keyed_tables << table_name
+
+      rescue Sequel::DatabaseError => ex
+        # Mysql2::Error: Cannot delete or update a parent row: a foreign key constraint fails
+        if ex.message =~ /foreign key constraint fails/
+          foreign_keyed_tables << table_name
+        else
+          raise
+        end
+      end
+    end
+
+    # this should be temporary
+    if tables.sort == foreign_keyed_tables.sort
+      raise "can't remove #{tables.inspect} because they have mutual foreign keys"
+    end
+
+    # recursively delete tables
+    drop_tables foreign_keyed_tables.shuffle unless foreign_keyed_tables.empty?
+  end
+
+  def create_tables
+    logger.info "creating tables"
+    eval( schema_migration ).apply dst_db, :up
+  end
+end

@@ -6,16 +6,13 @@ require 'uri'
 def restore( directory, db, drop_tables: false )
   require 'wyrm/restore_schema'
   rs = RestoreSchema.new db, directory
-  rs.create
-  rs.restore_tables
-  rs.index
+  rs.call
 end
 
 def dump( db, directory )
   require 'wyrm/dump_schema'
   ds = DumpSchema.new db, directory
-  ds.dump_schema
-  ds.dump_tables
+  ds.call
 end
 
 if ARGV.empty?

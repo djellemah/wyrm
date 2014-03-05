@@ -5,23 +5,30 @@ require 'wyrm/pump_maker'
 # and restore the table data.
 #  dst_db = Sequel.connect "postgres://localhost:5454/lots"
 #  rs = RestoreSchema.new dst_db, '/var/data/lots'
-#  rs.create
-#  rs.restore_tables
+#  rs.call
 # TODO the problem with lazy loading the schema files is that
 # errors in indexes and foreign keys will only be picked up at the
 # end of they probably lengthy table restore process.
+# TODO check if table has been restored already, and has the correct rows,
 class RestoreSchema
   include PumpMaker
+  include SchemaTools
 
-  def initialize( dst_db, container, pump: nil )
+  def initialize( dst_db, container, pump: nil, drop_tables: false )
     @container = Pathname.new container
     @dst_db = maybe_deebe dst_db
     @pump = make_pump( @dst_db, pump )
+
+    options.drop_tables = drop_tables
   end
 
   attr_reader :pump
   attr_reader :dst_db
   attr_reader :container
+
+  def options
+    @options ||= OpenStruct.new
+  end
 
   # sequel wants migrations numbered, but it's a bit of an annoyance for this.
   def find_single( glob )
@@ -52,31 +59,10 @@ class RestoreSchema
     @logger ||= Logger.new STDERR
   end
 
-  # create indexes and foreign keys, and reset sequences
-  def index
-    logger.info "creating indexes"
-    eval( index_migration ).apply dst_db, :up
-    logger.info "creating foreign keys"
-    eval( fk_migration ).apply dst_db, :up
-
-    if dst_db.database_type == :postgres
-      logger.info "reset primary key sequences"
-      dst_db.tables.each{|t| dst_db.reset_primary_key_sequence(t)}
-      logger.info "Primary key sequences reset successfully"
-    end
-  end
-
-  # create the destination schema
-  def create
-    logger.info "creating tables"
-    eval( schema_migration ).apply dst_db, :up
-  end
-
   # assume the table name is the base name of table_file pathname
   def restore_table( table_file )
     logger.info "restoring from #{table_file}"
     pump.table_name = table_file.basename.sub_ext('').sub_ext('').to_s.to_sym
-    # TODO check if table has been restored already, and has the correct rows,
     open_bz2 table_file do |io|
       pump.io = io
       pump.restore
@@ -101,5 +87,12 @@ class RestoreSchema
   def restore_tables
     table_files = Pathname.glob container + '*.dbp.bz2'
     table_files.sort_by{|tf| tf.stat.size}.each{|table_file| restore_table table_file}
+  end
+
+  def call
+    drop_tables if options.drop_tables
+    create_tables
+    restore_tables
+    create_indexes
   end
 end
