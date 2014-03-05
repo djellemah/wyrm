@@ -46,9 +46,11 @@ class DbPump
     @db.extension :pagination
 
     # turn on postgres streaming if available
-    if defined?( Sequel::Postgres ) && Sequel::Postgres.supports_streaming?
-      logger.info "Turn streaming on for postgres"
+    if defined?( Sequel::Postgres ) && defined?(Sequel::Postgres.supports_streaming?) && Sequel::Postgres.supports_streaming?
+      logger.debug "Streaming for postgres"
       @db.extension :pg_streaming
+    else
+      logger.info "No streaming for postgres"
     end
   end
 
@@ -108,8 +110,9 @@ class DbPump
     end
   end
 
+  attr_writer :logger
   def logger
-    @logger ||= Logger.new STDERR
+    @logger ||= Logger.new( STDERR )
   end
 
   def primary_keys
@@ -122,9 +125,12 @@ class DbPump
 
   # Use limit / offset. Last fallback if there are no keys (or a compound primary key?).
   def paginated_dump( &encode_block )
+    records_count = 0
     table_dataset.order(*primary_keys).each_page(page_size) do |page|
-      logger.info page.sql
+      logger.info{ "#{__method__} #{table_name} #{records_count}" }
+      logger.debug{ page.sql }
       page.each &encode_block
+      records_count += page_size
     end
   end
 
@@ -144,7 +150,8 @@ class DbPump
     0.step(table_dataset.count, page_size).each do |offset|
       limit_dataset = table_dataset.select( *primary_keys ).limit( page_size, offset ).order( *primary_keys )
       page = table_dataset.join( limit_dataset, Hash[ primary_keys.map{|f| [f,f]} ] ).order( *primary_keys ).qualify(table_name)
-      logger.info page.sql
+      logger.info{ "#{__method__} #{table_name} #{offset}" }
+      logger.debug{ page.sql }
       page.each &encode_block
     end
   end
@@ -162,13 +169,14 @@ class DbPump
     # bigger than max for the last page
     (min..max).step(page_size).each do |offset|
       page = table_dataset.where( id: offset...(offset + page_size) )
-      logger.info page.sql
+      logger.info{ "#{__method__} #{table_name} #{offset}" }
+      logger.debug{ page.sql }
       page.each &encode_block
     end
   end
 
   def stream_dump( &encode_block )
-    logger.info "using result set streaming"
+    logger.debug{ "using result set streaming" }
 
     # I want to output progress every page_size records,
     # without doing a records_count % page_size every iteration.
@@ -183,7 +191,8 @@ class DbPump
           records_count += 1
         end
       ensure
-        logger.info "#{records_count} from #{table_dataset.sql}"
+        logger.info{ "#{__method__} #{table_name} #{records_count}" if records_count < page_size }
+        logger.debug{ "  from #{table_dataset.sql}" }
       end
     end
   end
@@ -239,20 +248,19 @@ class DbPump
 
     return unless dump_matches_columns?( row_enum, columns )
 
-    logger.info{ "inserting to #{table_name} #{columns.inspect}" }
+    logger.info{ "#{__method__} inserting to #{table_name} from #{start_row}" }
+    logger.debug{ "  #{columns.inspect}" }
     rows_restored = 0
 
     if start_row != 0
-      logger.info{ "skipping #{start_row} rows from #{filename}" }
+      logger.debug{ "skipping #{start_row} rows from #{filename}" }
       start_row.times do |i|
         row_enum.next
-        logger.info{ "skipped #{i} from #{filename}" } if i % page_size == 0
+        logger.debug{ "skipped #{i} from #{filename}" } if i % page_size == 0
       end
-      logger.info{ "skipped #{start_row} from #{filename}" }
+      logger.debug{ "skipped #{start_row} from #{filename}" }
       rows_restored += start_row
     end
-
-    logger.info{ "inserting to #{table_name} from #{rows_restored}" }
 
     loop do
       db.transaction do
@@ -272,10 +280,9 @@ class DbPump
           # StopIteration to get out of the loop{} statement
           db.after_commit{ raise StopIteration }
         end
-        logger.info{ "#{table_name} inserted #{rows_restored}" }
       end
     end
-    logger.info{ "#{table_name} done. Inserted #{rows_restored}." }
+    logger.info{ "#{__method__} #{table_name} done. Inserted #{rows_restored}." }
     rows_restored
   end
 
