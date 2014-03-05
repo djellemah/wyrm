@@ -3,7 +3,7 @@
 require 'pathname'
 require 'uri'
 
-def restore( db, directory )
+def restore( directory, db, drop_tables: false )
   require 'wyrm/restore_schema'
   rs = RestoreSchema.new db, directory
   rs.create
@@ -30,7 +30,7 @@ if src.scheme && Pathname(dst.to_s).exist?
   dump( src.to_s, dst.to_s )
 elsif dst.scheme && Pathname(src.to_s).exist?
   # dst is a path and src is a url, so restore
-  restore( dst.to_s, src.to_s )
+  restore src.to_s, dst.path
 else
   puts "Don't know how to handle #{src} -> #{dst}"
 end
