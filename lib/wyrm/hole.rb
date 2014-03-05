@@ -124,11 +124,6 @@ module Wyrm
       end
     end
 
-    # needed by SchemaMigrations
-    def same_db
-      src_db == dst_db
-    end
-
     include SchemaMigrations
 
     def transfer_schema( &transfer_table_block )

@@ -3,8 +3,9 @@ Sequel.extension :migration
 # needs dst_db for mutate operations
 # and src_db for fetch operations
 module SchemaTools
+  # some includers will need to provide a different implementation for this.
   def same_db
-    src_db == dst_db
+    respond_to?( :dst_db ) && respond_to?( :src_db ) && dst_db.andand.database_type == src_db.andand.database_type
   end
 
   def schema_migration
