@@ -2,21 +2,20 @@ require 'sequel'
 require 'yaml'
 require 'logger'
 
-Sequel.extension :migration
-
 # TODO when restoring, could use a SizeQueue to make sure the db is kept busy
 # TODO need to version the dumps, or something like that.
 # TODO looks like io should belong to codec. Hmm. Not sure.
 # TODO table_name table_dataset need some thinking about. Dataset would encapsulate both. But couldn't change db then, and primary_keys would be hard.
 class DbPump
   # some codecs might ignore io, eg if a dbpump is talking to another dbpump
-  def initialize( db: nil, table_name: nil, io: STDOUT, codec: :marshal, page_size: 10000, dry_run: false )
+  def initialize( db: nil, table_name: nil, io: STDOUT, codec: :marshal, page_size: 10000, dry_run: false, logger: nil )
     self.codec = codec
     self.db = db
     self.table_name = table_name
     self.io = io
     self.page_size = page_size
     self.dry_run = dry_run
+    self.logger = logger
     yield self if block_given?
   end
 

@@ -14,7 +14,7 @@ class DumpSchema
 
   def initialize( src_db, container = nil, pump: nil )
     @src_db = maybe_deebe src_db
-    @container = Pathname.new container
+    @container = Pathname.new( container || '.')
     @pump = make_pump( @src_db, pump )
 
     @src_db.extension :schema_dumper
