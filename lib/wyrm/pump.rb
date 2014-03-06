@@ -63,10 +63,8 @@ class Wyrm::Pump
   # TODO can maybe use lambda and Proc#=== here
   def self.quacks_like( *methods )
     @quacks_like ||= {}
-    @quacks_like[methods] ||= Object.new.tap do |obj|
-      obj.define_singleton_method(:===) do |instance|
-        methods.all?{|m| instance.respond_to? m}
-      end
+    @quacks_like[methods] ||= lambda do |instance|
+      methods.all?{|m| instance.respond_to? m}
     end
   end
 
