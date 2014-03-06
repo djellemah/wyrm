@@ -1,34 +1,35 @@
 require 'thread'
-require 'logger'
+require 'wyrm/logger'
 
-require 'wyrm/db_pump'
+require 'wyrm/module'
+require 'wyrm/pump'
 require 'wyrm/pump_maker'
-require 'wyrm/schema_migrations'
-
-class Method
-  def kwargs_as_hash( invocation_binding )
-    named_locals = parameters. \
-      select{|type,_| type == :key}. \
-      flat_map{|_,name| [name,invocation_binding.eval(name.to_s)]}
-
-    Hash[ *named_locals ]
-  end
-end
+require 'wyrm/schema_tools'
+require 'wyrm/core_extensions'
 
 module Wyrm
   # This bypasses the need to marshal objects between two pumps.
   # It uses a queue of the record arrays instead.
   class Hole
     include PumpMaker
+    include Logger
 
     # This is the codec. Named for the mouth of a wormhole. Cos finding a good name for this is hard.
     #
-    # Connects the two db_pumps together. Implements Codec, Quacks like IO.
+    # Connects the two pumps together. Implements Codec, Quacks like IO.
     class Mouth
+      include Logger
+
+      def initialize
+        @flushed = false
+      end
+
+      # This is a bit weird because io_queue will usually == self
       def encode( obj, io_queue )
         io_queue.enq obj
       end
 
+      # This is a bit weird because io_queue will usually == self
       def decode( io_queue, &block )
         obj = io_queue.deq
         yield obj if block_given?
@@ -36,43 +37,56 @@ module Wyrm
       end
 
       def reset
+        # do this first, so any (hopefully not) remaining waiters don't
+        # go into the blocking deq again.
         @flushed = false
+
+        # clear any poisons, and release any (hopefully not) remaining waiters
         queue.clear
       end
 
       # queue could be empty while producer is generating something,
-      # so only eof after flushed has been called.
+      # so only eof after flush has been called.
       def eof?
+        # queue is not empty if it's been poisoned.
         @flushed && queue.empty?
       end
 
-      # this gets called after dump is finished, by db_pump
-      def flush
-        @flushed = true
-      end
-
+      # use a SizedQueue so we don't run out of memory during a big transfer
       def queue
         @queue ||=
         if RUBY_VERSION == '2.1.0'
-          logger.notice "SizedQueue broken in 2.1.0 (https://bugs.ruby-lang.org/issues/9302). Falling back to Queue, which may run out of memory."
+          logger.warn "SizedQueue broken in 2.1.0 (https://bugs.ruby-lang.org/issues/9302). Falling back to Queue, which may run out of memory."
           Queue.new
         else
           SizedQueue.new 5000
         end
       end
 
-      def enq( *args )
-        queue.enq( *args )
+      def enq( value )
+        queue.enq value
       end
 
       def deq( *args )
-        queue.deq( *args )
+        rv = queue.deq( *args )
+        if rv == :poison
+          poison_queue
+          raise StopIteration
+        end
+        rv
       end
-    end
 
-    def logger
-      @logger ||= Logger.new( STDERR ).tap do |lgr|
-        lgr.level = Logger::INFO
+      def poison_queue
+        # poison the queue. waiters will have to re-queue this.
+        queue << :poison if queue.empty? && queue.num_waiting > 0
+      end
+
+      # this gets called after dump is finished, by pump
+      def flush
+        # do this first, so any non-poisoned waiters will eof
+        # synchronisation is not really important because
+        @flushed = true
+        poison_queue
       end
     end
 
@@ -93,11 +107,11 @@ module Wyrm
     end
 
     def src_pump
-      @src_pump ||= DbPump.new( {db: src_db, io: mouth, codec: mouth, logger: logger}.merge( options[:db_pump] ||{} ) )
+      @src_pump ||= Pump.new( {db: src_db, io: mouth, codec: mouth, logger: logger}.merge( options[:pump] ||{} ) )
     end
 
     def dst_pump
-      @dst_pump ||= DbPump.new( {db: dst_db, io: mouth, codec: mouth, logger: logger}.merge( options[:db_pump] ||{} ) )
+      @dst_pump ||= Pump.new( {db: dst_db, io: mouth, codec: mouth, logger: logger}.merge( options[:pump] ||{} ) )
     end
 
     def transfer_table( table_name )
@@ -109,22 +123,15 @@ module Wyrm
         return
       end
 
-      threading = false
-      if threading
-        # Use threads so the db read/writes aren't waiting for
-        # one another.
-        send_thread = Thread.new{ src_pump.dump }
-        recv_thread = Thread.new{ dst_pump.restore }
+      # Use threads so the db read/writes aren't waiting for one another.
+      recv_thread = Thread.new{ dst_pump.restore }
+      send_thread = Thread.new{ src_pump.dump }
 
-        send_thread.join
-        recv_thread.join
-      else
-        src_pump.dump
-        dst_pump.restore
-      end
+      send_thread.join
+      recv_thread.join
     end
 
-    include SchemaMigrations
+    include SchemaTools
 
     def transfer_schema( &transfer_table_block )
       create_tables
@@ -132,19 +139,7 @@ module Wyrm
       # transfer tables here
       yield self if block_given?
 
-      # TODO duplicate of RestoreSchema.index
-      # create indexes and foreign keys, and reset sequences
-      logger.info "creating indexes"
-      eval( index_migration ).apply dst_db, :up
-
-      logger.info "creating foreign keys"
-      eval( fk_migration ).apply dst_db, :up
-
-      if dst_db.database_type == :postgres
-        logger.info "reset primary key sequences"
-        dst_db.tables.each{|t| dst_db.reset_primary_key_sequence(t)}
-        logger.info "Primary key sequences reset successfully"
-      end
+      create_indexes
     end
 
     def transfer_tables
@@ -154,7 +149,7 @@ module Wyrm
       end
     end
 
-    def transfer
+    def call
       if options[:drop_tables]
         logger.info "dropping tables"
         drop_tables src_db.tables

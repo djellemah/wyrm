@@ -1,5 +1,6 @@
 require 'logger'
 
+require 'wyrm/module'
 require 'wyrm/pump_maker'
 require 'wyrm/schema_tools'
 
@@ -8,13 +9,16 @@ require 'wyrm/schema_tools'
 #  ds = DumpSchema.new src_db, Pathname('/var/data/lots')
 #  ds.call
 # TODO possibly use Gem::Package::TarWriter to write tar files
-class DumpSchema
+class Wyrm::Dump
   include PumpMaker
   include SchemaTools
+  include Logger
 
   def initialize( src_db, container = nil, pump: nil )
+    @container = Pathname.new container || '.'
+    raise "#{@container} does not exist" unless @container.exist?
+
     @src_db = maybe_deebe src_db
-    @container = Pathname.new( container || '.')
     @pump = make_pump( @src_db, pump )
 
     @src_db.extension :schema_dumper
@@ -24,10 +28,6 @@ class DumpSchema
 
   def same_db
     false
-  end
-
-  def logger
-    @logger ||= Logger.new STDERR
   end
 
   def numbering

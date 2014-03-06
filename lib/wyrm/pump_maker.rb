@@ -1,6 +1,7 @@
-require 'wyrm/db_pump'
+require 'wyrm/pump'
+require 'wyrm/module'
 
-module PumpMaker
+module Wyrm::PumpMaker
   def call_or_self( maybe_callable )
     if maybe_callable.respond_to? :call
       maybe_callable.call( self )
@@ -10,7 +11,7 @@ module PumpMaker
   end
 
   def make_pump( db, pump_thing )
-    call_or_self(pump_thing) || DbPump.new( db: db )
+    call_or_self(pump_thing) || Pump.new( db: db )
   end
 
   def maybe_deebe( db_or_string )

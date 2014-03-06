@@ -1,8 +1,10 @@
+require 'fastandand'
 Sequel.extension :migration
+require 'wyrm/module'
 
 # needs dst_db for mutate operations
 # and src_db for fetch operations
-module SchemaTools
+module Wyrm::SchemaTools
   # some includers will need to provide a different implementation for this.
   def same_db
     respond_to?( :dst_db ) && respond_to?( :src_db ) && dst_db.andand.database_type == src_db.andand.database_type
@@ -67,5 +69,20 @@ module SchemaTools
   def create_tables
     logger.info "creating tables"
     eval( schema_migration ).apply dst_db, :up
+  end
+
+  def create_indexes
+    # create indexes and foreign keys, and reset sequences
+    logger.info "creating indexes"
+    eval( index_migration ).apply dst_db, :up
+
+    logger.info "creating foreign keys"
+    eval( fk_migration ).apply dst_db, :up
+
+    if dst_db.database_type == :postgres
+      logger.info "reset primary key sequences"
+      dst_db.tables.each{|t| dst_db.reset_primary_key_sequence(t)}
+      logger.info "Primary key sequences reset successfully"
+    end
   end
 end

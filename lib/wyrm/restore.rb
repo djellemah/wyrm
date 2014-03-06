@@ -1,5 +1,10 @@
-require 'logger'
+require 'ostruct'
+require 'pathname'
+
+require 'wyrm/logger'
+require 'wyrm/module'
 require 'wyrm/pump_maker'
+require 'wyrm/schema_tools'
 
 # Load a schema from a set of dump files (from DumpSchema)
 # and restore the table data.
@@ -10,11 +15,12 @@ require 'wyrm/pump_maker'
 # errors in indexes and foreign keys will only be picked up at the
 # end of they probably lengthy table restore process.
 # TODO check if table has been restored already, and has the correct rows,
-class RestoreSchema
+class Wyrm::Restore
   include PumpMaker
   include SchemaTools
+  include Wyrm::Logger
 
-  def initialize( dst_db, container, pump: nil, drop_tables: false )
+  def initialize( container, dst_db, pump: nil, drop_tables: false )
     @container = Pathname.new container
     @dst_db = maybe_deebe dst_db
     @pump = make_pump( @dst_db, pump )
@@ -32,7 +38,7 @@ class RestoreSchema
 
   # sequel wants migrations numbered, but it's a bit of an annoyance for this.
   def find_single( glob )
-    candidates =Pathname.glob container + glob
+    candidates = Pathname.glob container + glob
     raise "too many #{candidates.inspect} for #{glob}" unless candidates.size == 1
     candidates.first
   end
@@ -55,17 +61,13 @@ class RestoreSchema
     @schema_migration = nil
   end
 
-  def logger
-    @logger ||= Logger.new STDERR
-  end
-
   # assume the table name is the base name of table_file pathname
   def restore_table( table_file )
     logger.info "restoring from #{table_file}"
     pump.table_name = table_file.basename.sub_ext('').sub_ext('').to_s.to_sym
     open_bz2 table_file do |io|
       pump.io = io
-      pump.restore
+      pump.restore filename: table_file
     end
   end
 
@@ -84,13 +86,22 @@ class RestoreSchema
     IO.popen "pbzip2 -d -c #{table_file}", &block
   end
 
+  def table_files
+    Pathname.glob container + '*.dbp.bz2'
+  end
+
   def restore_tables
-    table_files = Pathname.glob container + '*.dbp.bz2'
     table_files.sort_by{|tf| tf.stat.size}.each{|table_file| restore_table table_file}
   end
 
+  def table_names
+    table_files.map do |path|
+      path.basename.to_s.split(?.)[0...-2].last.to_sym
+    end
+  end
+
   def call
-    drop_tables if options.drop_tables
+    drop_tables(table_names) if options.drop_tables
     create_tables
     restore_tables
     create_indexes

@@ -1,13 +1,14 @@
 require 'sequel'
 require 'yaml'
-require 'logger'
+
+require 'wyrm/logger'
+require 'wyrm/module'
 
 # TODO when restoring, could use a SizeQueue to make sure the db is kept busy
 # TODO need to version the dumps, or something like that.
 # TODO looks like io should belong to codec. Hmm. Not sure.
 # TODO table_name table_dataset need some thinking about. Dataset would encapsulate both. But couldn't change db then, and primary_keys would be hard.
-class DbPump
-  # some codecs might ignore io, eg if a dbpump is talking to another dbpump
+class Wyrm::Pump
   def initialize( db: nil, table_name: nil, io: STDOUT, codec: :marshal, page_size: 10000, dry_run: false, logger: nil )
     self.codec = codec
     self.db = db
@@ -18,6 +19,9 @@ class DbPump
     self.logger = logger
     yield self if block_given?
   end
+
+  include Wyrm::Logger
+  attr_writer :logger
 
   attr_accessor :io, :page_size, :dry_run
   def dry_run?; dry_run; end
@@ -56,6 +60,7 @@ class DbPump
   # return an object that responds to ===
   # which returns true if ==='s parameter
   # responds to all the methods
+  # TODO can maybe use lambda and Proc#=== here
   def self.quacks_like( *methods )
     @quacks_like ||= {}
     @quacks_like[methods] ||= Object.new.tap do |obj|
@@ -109,11 +114,6 @@ class DbPump
     end
   end
 
-  attr_writer :logger
-  def logger
-    @logger ||= Logger.new( STDERR )
-  end
-
   def primary_keys
     @primary_keys ||= db.schema(table_name).select{|df| df.last[:primary_key]}.map{|df| df.first}
   end
@@ -137,8 +137,6 @@ class DbPump
   # The idea is that large offsets are expensive in the db because the db server has to read
   # through the data set to reach the required offset. So make that only ids need to be read,
   # and then do the main select from the limited id list.
-  # TODO could speed this up by have a query thread which runs the next page-query while
-  # the current one is being written/compressed.
   # select * from massive as full
   #   inner join (select id from massive order by whatever limit m, n) limit
   #   on full.id = limit.id
@@ -197,12 +195,16 @@ class DbPump
   end
 
   # Dump the serialization of the table to the specified io.
+  #
   # TODO need to also dump a first row containing useful stuff:
   # - source table name
   # - number of rows
   # - source db url
   # - permissions?
   # These should all be in one object that can be Marshall.load-ed easily.
+  #
+  # TODO could speed this up by have a query thread which runs the next page-query while
+  # the current one is being written/compressed.
   def dump
     _dump do |row|
       codec.encode( row.values, io ) unless dry_run?
@@ -274,7 +276,7 @@ class DbPump
             rows_restored += 1
           end
         rescue StopIteration
-          # er reached the end of the inout stream.
+          # reached the end of the inout stream.
           # So commit this transaction, and then re-raise
           # StopIteration to get out of the loop{} statement
           db.after_commit{ raise StopIteration }
@@ -285,8 +287,9 @@ class DbPump
     rows_restored
   end
 
-  # Enumerate through the given io at its current position
-  # TODO don't check for io.eof here, leave that to the codec
+  # Enumerate through the given io at its current position.
+  # Can raise StopIteration (ie when eof is not detected)
+  # MAYBE don't check for io.eof here, leave that to the codec
   def each_row
     return enum_for(__method__) unless block_given?
     yield codec.decode( io ) until io.eof?

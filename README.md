@@ -19,7 +19,7 @@ Will use result set streaming if available.
 Wyrm because:
 
 - I like dragons
-- I can (eventually) have a Wyrm::Hole to transfer data through ;-)
+- I can have a Wyrm::Hole to transfer data ;-)
 
 ## Dependencies
 
@@ -28,7 +28,6 @@ You must have a working
 on your path.
 
 ## Installation
-
 
 Add this line to your application's Gemfile:
 
@@ -52,6 +51,11 @@ Make sure you install the db gems, typically
 
 Very basic cli at this point.
 
+#### For direct db-to-db transfer
+
+    $ wyrm mysql2://localhost/beeg_data_bays postgres://localhost/betta_dee_bee
+
+#### Via files
 From the source db to the file system
 
     $ wyrm mysql2://localhost/beeg_data_bays /tmp/lots_fs_space
@@ -71,19 +75,17 @@ For restoring. dump will be similar.
 ``` ruby
 require 'wyrm/restore_schema'
 rs = RestoreSchema.new 'postgres://postgres@localhost/your_db', '/mnt/disk/wyrm'
-rs.create
-rs.restore_tables
-rs.index
+rs.call
 ```
 
 Or for the lower-level stuff
 
 ``` ruby
 require 'sequel'
-require 'wyrm/db_pump'
+require 'wyrm/pump'
 
 db = Sequel.connect 'postgres://postgres@localhost/other_db'
-dbp = DbPump.new db, :things
+dbp = Wyrm::Pump.new db, :things
 dbp.io = IO.popen 'pbzip2 -d -c /mnt/disk/wyrm/things.dbp.bz2'
 dbp.each_row do |row|
   puts row.inspect

@@ -1,25 +1,12 @@
 #! /usr/bin/env ruby
 
-require 'pathname'
 require 'uri'
-
-def restore( directory, db, drop_tables: false )
-  require 'wyrm/restore_schema'
-  rs = RestoreSchema.new db, directory
-  rs.call
-end
-
-def dump( db, directory )
-  require 'wyrm/dump_schema'
-  ds = DumpSchema.new db, directory
-  ds.call
-end
 
 if ARGV.empty?
   puts <<EOF
 Usage: #{$0} src_db|dirname dst_db|dirname
 
-dirname contains a set of wyrm dump files, or will soon.
+dirname contains a set of wyrm files, or will soon.
 
 sample db strings:
   postgres://localhost/lotsa_datsa
@@ -28,20 +15,35 @@ sample db strings:
 EOF
 end
 
-src, dst = ARGV.map{|arg| URI.parse arg}
-
-if Pathname(dst.path).exist? && Pathname(src.path).exist?
-  puts "No point copying one directory to another. Just use filesystem tools. It's faster."
-  exit(1)
+class URI::Generic
+  def fs_path?
+    scheme == 'file' || scheme.nil?
+  end
 end
 
-if src.scheme && Pathname(dst.path).exist?
-  # src is a db path, so dump from it
-  dump src.to_s, dst.path
-elsif dst.scheme && Pathname(src.path).exist?
-  # dst is a path and src is a url, so restore
-  restore src.to_s, dst.path
+src, dst = ARGV.map{|arg| URI.parse arg}
+
+require 'wyrm/module'
+include Wyrm
+
+case
+when src.fs_path? && dst.fs_path?
+  puts "No point copying one directory to another. Just use filesystem tools. It's faster."
+  exit(1)
+
+when !src.fs_path? && dst.fs_path?
+  # src is a url, and dst is a path, so dump to file system
+  require 'wyrm/dump'
+  Dump.new( src.to_s, dst.path ).call
+
+when src.fs_path? && !dst.fs_path?
+  # src is a path and dst is a url, so restore to db
+  require 'wyrm/restore'
+  Restore.new(src.path, dst.to_s, drop_tables: true).call
+
 else
+  # both db urls, so transfer
   require 'wyrm/hole.rb'
-  Wyrm::Hole.new( src.to_s, dst.to_s ).transfer
+  Hole.new( src.to_s, dst.to_s ).call
+
 end
