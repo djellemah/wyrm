@@ -60,11 +60,10 @@ class Wyrm::Pump
   # return an object that responds to ===
   # which returns true if ==='s parameter
   # responds to all the methods
-  # TODO can maybe use lambda and Proc#=== here
   def self.quacks_like( *methods )
     @quacks_like ||= {}
-    @quacks_like[methods] ||= lambda do |instance|
-      methods.all?{|m| instance.respond_to? m}
+    @quacks_like[methods] ||= lambda do |inst|
+      methods.all?{|m| inst.respond_to? m}
     end
   end
 
@@ -79,7 +78,7 @@ class Wyrm::Pump
     when :marshal; MarshalCodec.new
     when Class
       codec_thing.new
-    when quacks_like( :encode, :decode )
+    when quacks_like(:encode,:decode)
       codec_thing
     else
       raise "unknown codec #{codec_thing.inspect}"
