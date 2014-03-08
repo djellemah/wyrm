@@ -4,6 +4,7 @@ require 'wyrm/module'
 
 # needs dst_db for mutate operations
 # and src_db for fetch operations
+# src_db must have extension(:schema_dumper)
 module Wyrm::SchemaTools
   # some includers will need to provide a different implementation for this.
   def same_db
@@ -25,7 +26,7 @@ module Wyrm::SchemaTools
   def drop_table_options
     @drop_table_options ||=
     begin
-      if dst_db.opts[:adapter] == 'postgres'
+      if dst_db.database_type == :postgres
         {cascade: true}
       else
         {}
@@ -49,11 +50,13 @@ module Wyrm::SchemaTools
 
       rescue Sequel::DatabaseError => ex
         # Mysql2::Error: Cannot delete or update a parent row: a foreign key constraint fails
-        if ex.message =~ /foreign key constraint fails/
+        # SQLite3::ConstraintException: FOREIGN KEY constraint failed==
+        if ex.message =~ /foreign key constraint fail/i
           foreign_keyed_tables << table_name
         else
           raise
         end
+
       end
     end
 
