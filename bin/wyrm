@@ -2,7 +2,7 @@
 
 require 'uri'
 
-if ARGV.empty?
+if ARGV.size != 2
   puts <<EOF
 Usage: #{$0} src_db|dirname dst_db|dirname
 
@@ -16,13 +16,13 @@ EOF
   exit(1)
 end
 
-class URI::Generic
+module FsPath
   def fs_path?
     scheme == 'file' || scheme.nil?
   end
 end
 
-src, dst = ARGV.map{|arg| URI.parse arg}
+src, dst = ARGV.map{|arg| URI.parse(arg).extend(FsPath)}
 
 require 'wyrm/cli'
 Wyrm.sanity_check_pbzip2
