@@ -1,8 +1,9 @@
-require 'logger'
+require 'pathname'
 
 require 'wyrm/module'
 require 'wyrm/pump_maker'
 require 'wyrm/schema_tools'
+require 'wyrm/logger'
 
 # Dump a schema and compressed data from a db to a set of files
 #  src_db = Sequel.connect "postgres://localhost:5454/lots"
@@ -12,7 +13,7 @@ require 'wyrm/schema_tools'
 class Wyrm::Dump
   include PumpMaker
   include SchemaTools
-  include Logger
+  include Wyrm::Logger
 
   def initialize( src_db, container = nil, pump: nil )
     @container = Pathname.new container || '.'
