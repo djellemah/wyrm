@@ -20,8 +20,5 @@ end
 
 preferred_sources.each{|src| source src}
 
-gem 'sequel'
-gem 'fastandand'
-
 # Specify your gem's dependencies in wyrm.gemspec
 gemspec

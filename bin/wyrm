@@ -1,36 +1,52 @@
 #! /usr/bin/env ruby
 
-require 'pathname'
 require 'uri'
 
-def restore( db, directory )
-  require 'wyrm/restore_schema'
-  rs = RestoreSchema.new db, directory
-  rs.create
-  rs.restore_tables
-  rs.index
+if ARGV.size != 2
+  puts <<EOF
+Usage: #{$0} src_db|dirname dst_db|dirname
+
+dirname contains a set of wyrm files, or will soon.
+
+sample db strings:
+  postgres://localhost/lotsa_datsa
+  mysql://root:pwned@localhost/lotsa_datsa
+  mysql2://root:pwned@localhost/lotsa_fastsa_datsa
+EOF
+  exit(1)
 end
 
-def dump( db, directory )
-  require 'wyrm/dump_schema'
-  ds = DumpSchema.new db, directory
-  ds.dump_schema
-  ds.dump_tables
+module FsPath
+  def fs_path?
+    scheme == 'file' || scheme.nil?
+  end
 end
 
-if ARGV.empty?
-  puts "Provide source and destination"
-  puts "Either can be a sequel db string or a directory"
-end
+src, dst = ARGV.map{|arg| URI.parse(arg).extend(FsPath)}
 
-src, dst = ARGV.map{|arg| URI.parse arg}
+require 'wyrm/cli'
+Wyrm.sanity_check_pbzip2
 
-if src.scheme && Pathname(dst.to_s).exist?
-  # src is a db path, so dump from it
-  dump( src.to_s, dst.to_s )
-elsif dst.scheme && Pathname(src.to_s).exist?
-  # dst is a path and src is a url, so restore
-  restore( dst.to_s, src.to_s )
+include Wyrm
+
+case
+when src.fs_path? && dst.fs_path?
+  puts "No point copying one directory to another. Just use filesystem tools. It's faster."
+  exit(1)
+
+when !src.fs_path? && dst.fs_path?
+  # src is a url, and dst is a path, so dump to file system
+  require 'wyrm/dump'
+  Dump.new( src.to_s, dst.path ).call
+
+when src.fs_path? && !dst.fs_path?
+  # src is a path and dst is a url, so restore to db
+  require 'wyrm/restore'
+  Restore.new(src.path, dst.to_s, drop_tables: true).call
+
 else
-  puts "Don't know how to handle #{src} -> #{dst}"
+  # both db urls, so transfer
+  require 'wyrm/hole.rb'
+  Hole.new( src.to_s, dst.to_s ).call
+
 end

@@ -1,18 +1,25 @@
-require 'logger'
+require 'pathname'
+
+require 'wyrm/module'
 require 'wyrm/pump_maker'
+require 'wyrm/schema_tools'
+require 'wyrm/logger'
 
 # Dump a schema and compressed data from a db to a set of files
 #  src_db = Sequel.connect "postgres://localhost:5454/lots"
 #  ds = DumpSchema.new src_db, Pathname('/var/data/lots')
-#  ds.dump_schema
-#  ds.dump_tables
+#  ds.call
 # TODO possibly use Gem::Package::TarWriter to write tar files
-class DumpSchema
+class Wyrm::Dump
   include PumpMaker
+  include SchemaTools
+  include Wyrm::Logger
 
   def initialize( src_db, container = nil, pump: nil )
+    @container = Pathname.new container || '.'
+    raise "#{@container} does not exist" unless @container.exist?
+
     @src_db = maybe_deebe src_db
-    @container = Pathname.new container
     @pump = make_pump( @src_db, pump )
 
     @src_db.extension :schema_dumper
@@ -20,33 +27,21 @@ class DumpSchema
 
   attr_reader :src_db, :container, :pump
 
-  def schema_migration
-    @schema_migration ||= src_db.dump_schema_migration(:indexes=>false, :same_db => same_db)
-  end
-
-  def index_migration
-    @index_migration ||= src_db.dump_indexes_migration(:same_db => same_db)
-  end
-
-  def fk_migration
-    @fk_migration ||= src_db.dump_foreign_key_migration(:same_db => same_db)
-  end
-
   def same_db
     false
   end
 
-  def logger
-    @logger ||= Logger.new STDERR
+  def numbering
+    @numbering ||= '000'
   end
 
   def dump_schema
-    numbering = '000'
-
     (container + "#{numbering.next!}_schema.rb").open('w') do |io|
       io.write schema_migration
     end
+  end
 
+  def dump_indexes
     (container + "#{numbering.next!}_indexes.rb").open('w') do |io|
       io.write index_migration
     end
@@ -106,5 +101,11 @@ class DumpSchema
     src_db.tables.each do |table_name|
       dump_table table_name
     end
+  end
+
+  def call
+    dump_schema
+    dump_tables
+    dump_indexes
   end
 end
