@@ -1,13 +1,18 @@
 # Wyrm
 
-Transfer data from one database to another. Has been used to dump > 100M dbs,
-and one 850G db. Should theoretically work for any dbs supported by Sequel.
+[![Gem Version](https://badge.fury.io/rb/wyrm.png)](http://badge.fury.io/rb/wyrm)
+
+Transfer a database from one rdbms to another (eg mysql to postgres). Either via
+a set of files, or direct from one db server to another.
+
+Has been used to dump > 100M dbs, and one 850G db.
+Should theoretically work for any rdbms supported by [Sequel](http://sequel.jeremyevans.net/).
 
 Dumps are compressed with bz2, using pbzip2. Fast *and* small :-D For example:
 mysqldump | bzip2 for a certain 850G db comes to 127G. With wyrm it
 comes to 134G.
 
-Currently transfers tables and views only. Does not attempt to transfer
+Transfers tables and views only. Does not attempt to transfer
 stored procs, permissions, triggers etc.
 
 Handles tables with a single numeric key, single non-numeric key, and no
@@ -74,7 +79,7 @@ For restoring. dump will be similar.
 
 ``` ruby
 require 'wyrm/restore_schema'
-rs = RestoreSchema.new 'postgres://postgres@localhost/your_db', '/mnt/disk/wyrm'
+rs = Restore.new 'postgres://postgres@localhost/your_db', '/mnt/disk/wyrm'
 rs.call
 ```
 

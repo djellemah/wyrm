@@ -8,8 +8,8 @@ Gem::Specification.new do |spec|
   spec.version       = Wyrm::VERSION
   spec.authors       = ["John Anderson"]
   spec.email         = ["panic@semiosix.com"]
-  spec.description   = %q{Transfer from one SQL database to another}
-  spec.summary       = %q{Transfer from one SQL database to another}
+  spec.description   = %q{Compressed cross-rdbms data transfer}
+  spec.summary       = %q{Transfer from one SQL rdbms to another }
   spec.homepage      = "https://github.com/djellemah/wyrm"
   spec.license       = "MIT"
 
