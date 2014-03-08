@@ -9,6 +9,9 @@ EOF
   exit(0)
 end
 
+require 'wyrm/cli'
+Wyrm.sanity_check_pbzip2
+
 require 'pathname'
 require 'yaml'
 

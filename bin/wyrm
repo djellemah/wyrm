@@ -13,6 +13,7 @@ sample db strings:
   mysql://root:pwned@localhost/lotsa_datsa
   mysql2://root:pwned@localhost/lotsa_fastsa_datsa
 EOF
+  exit(1)
 end
 
 class URI::Generic
@@ -23,7 +24,9 @@ end
 
 src, dst = ARGV.map{|arg| URI.parse arg}
 
-require 'wyrm/module'
+require 'wyrm/cli'
+Wyrm.sanity_check_pbzip2
+
 include Wyrm
 
 case
