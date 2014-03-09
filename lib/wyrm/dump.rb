@@ -11,8 +11,8 @@ require 'wyrm/logger'
 #  ds.call
 # TODO possibly use Gem::Package::TarWriter to write tar files
 class Wyrm::Dump
-  include PumpMaker
-  include SchemaTools
+  include Wyrm::PumpMaker
+  include Wyrm::SchemaTools
   include Wyrm::Logger
 
   def initialize( src_db, container = nil, pump: nil )

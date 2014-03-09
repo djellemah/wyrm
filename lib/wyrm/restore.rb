@@ -16,8 +16,8 @@ require 'wyrm/schema_tools'
 # end of they probably lengthy table restore process.
 # TODO check if table has been restored already, and has the correct rows,
 class Wyrm::Restore
-  include PumpMaker
-  include SchemaTools
+  include Wyrm::PumpMaker
+  include Wyrm::SchemaTools
   include Wyrm::Logger
 
   def initialize( container, dst_db, pump: nil, drop_tables: false )
