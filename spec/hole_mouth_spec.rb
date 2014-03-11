@@ -2,7 +2,11 @@ require 'rspec'
 
 require Pathname(__dir__) + '../lib/wyrm/hole.rb'
 
+
 describe Wyrm::Hole::Mouth do
+if RUBY_VERSION == '2.1.0'
+  it 'Queue broken on 2.1.0'
+else
   describe '#flush' do
     it 'calls poison_queue' do
       subject.should_receive(:poison_queue)
@@ -168,9 +172,9 @@ describe Wyrm::Hole::Mouth do
     # has a logger which nothing else uses
     it 'works' do
       Wyrm::Hole::Mouth::RUBY_VERSION = '2.1.0'
-      subject.should_receive(:logger).and_call_original
-      subject.queue
+      ->{subject.queue}.should raise_error(/broken in 2.1.0/)
       Wyrm::Hole::Mouth.send :remove_const, :RUBY_VERSION
     end
   end
+end #unless RUBY_VERSION == '2.1.0'
 end

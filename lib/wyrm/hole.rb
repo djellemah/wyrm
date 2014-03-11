@@ -56,8 +56,7 @@ module Wyrm
       def queue
         @queue ||=
         if RUBY_VERSION == '2.1.0'
-          logger.warn "SizedQueue broken in 2.1.0 (https://bugs.ruby-lang.org/issues/9302). Falling back to Queue, which may run out of memory."
-          Queue.new
+          raise "Queue broken in 2.1.0 possibly related to https://bugs.ruby-lang.org/issues/9302"
         else
           SizedQueue.new 5000
         end
