@@ -18,11 +18,34 @@ describe Pump do
   end
 
   describe '#table_name=' do
-    it 'invalidates caches'
+    it 'invalidates caches' do
+      subject.should_receive(:invalidate_cached_members)
+      subject.table_name = :big_face
+    end
   end
 
   describe '#db=' do
-    it 'invalidates caches'
+    it 'invalidates caches' do
+      subject.should_receive(:invalidate_cached_members)
+      subject.db = Sequel.sqlite
+    end
+
+    it 'handles nil db' do
+      ->{subject.db = nil}.should_not raise_error
+    end
+
+    it 'adds pagination extension' do
+      db = Sequel.sqlite
+      db.should_receive(:extension).with(:pagination)
+      subject.db = db
+    end
+
+    it 'turns on streaming for postgres' do
+      db = Sequel.postgres
+      db.should_receive(:extension).with(:pagination)
+      db.should_receive(:extension).with(:pg_streaming)
+      subject.db = db
+    end
   end
 
   describe '#codec=' do

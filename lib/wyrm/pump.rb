@@ -49,6 +49,7 @@ class Wyrm::Pump
     @db.extension :pagination
 
     # turn on postgres streaming if available
+    # also gets called for non-postgres dbs, but that seems to be fine.
     if defined?( Sequel::Postgres ) && defined?(Sequel::Postgres.supports_streaming?) && Sequel::Postgres.supports_streaming?
       logger.debug "Streaming for postgres"
       @db.extension :pg_streaming
