@@ -46,6 +46,13 @@ describe Pump do
       db.should_receive(:extension).with(:pg_streaming)
       subject.db = db
     end
+
+    it 'no streaming for non-postgres' do
+      db = Sequel.sqlite
+      db.should_receive(:extension).with(:pagination)
+      db.should_not_receive(:extension).with(:pg_streaming)
+      subject.db = db
+    end
   end
 
   describe '#codec=' do
