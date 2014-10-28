@@ -42,11 +42,11 @@ describe SchemaTools do
 
   describe '#same_db' do
     it 'for same db' do
-      src_dst.same_db.should be_true
+      src_dst.same_db.should == true
     end
 
     it 'for different db' do
-      src_dst( dst_db: Sequel.postgres ).same_db.should be_false
+      src_dst( dst_db: Sequel.postgres ).same_db.should == false
     end
   end
 
