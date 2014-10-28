@@ -1,4 +1,4 @@
-require 'rspec'
+require 'rspec_syntax'
 
 require Pathname(__dir__) + '../lib/wyrm/pump.rb'
 

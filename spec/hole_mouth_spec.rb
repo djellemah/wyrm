@@ -1,7 +1,6 @@
-require 'rspec'
+require 'rspec_syntax'
 
 require Pathname(__dir__) + '../lib/wyrm/hole.rb'
-
 
 describe Wyrm::Hole::Mouth do
 if RUBY_VERSION == '2.1.0'

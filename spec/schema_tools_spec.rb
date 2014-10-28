@@ -1,4 +1,4 @@
-require 'rspec'
+require 'rspec_syntax'
 require 'sequel'
 require 'sqlite3'
 
