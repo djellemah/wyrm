@@ -1,0 +1,2 @@
+== 0.3.2
+* update for >=sequel-4.10.0 internal syntax (Dataset#clause_sql removed)
