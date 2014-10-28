@@ -22,6 +22,8 @@ class Wyrm::Restore
 
   def initialize( container, dst_db, pump: nil, drop_tables: false )
     @container = Pathname.new container
+    fail "#{@container} does not exist" unless @container.exist?
+
     @dst_db = maybe_deebe dst_db
     @pump = make_pump( @dst_db, pump )
 
