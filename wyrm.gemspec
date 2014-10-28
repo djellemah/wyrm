@@ -18,7 +18,8 @@ Gem::Specification.new do |spec|
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
   spec.require_paths = ["lib"]
 
-  spec.add_runtime_dependency 'sequel'
+  # need this version because clause_sql was moved to _insert_sql, used by pump
+  spec.add_runtime_dependency 'sequel', '>= 4.10.0'
   spec.add_runtime_dependency "fastandand"
 
   spec.add_development_dependency "pry"

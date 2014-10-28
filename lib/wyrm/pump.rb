@@ -269,7 +269,9 @@ class Wyrm::Pump
             # to generate the
             #   insert into (field1,field2) values (value1,value2)
             # statement as quickly as possible.
-            sql = table_dataset.clone( columns: columns, values: row_enum.next ).send( :clause_sql, :insert )
+            #
+            # Uses a private method so it will need to be updated repeatedly.
+            sql = table_dataset.clone( columns: columns, values: row_enum.next ).send(:_insert_sql)
             db.execute sql unless dry_run?
             rows_restored += 1
           end
