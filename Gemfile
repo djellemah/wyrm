@@ -23,8 +23,7 @@ preferred_sources.each{|src| source src}
 # Specify your gem's dependencies in wyrm.gemspec
 gemspec
 
-
 if Pathname('/usr/include/mysql').exist?
   # version is for mysql streaming result sets
-  spec.add_development_dependency "mysql2", '>= 0.3.12'
+  gem "mysql2", '>= 0.3.12'
 end
