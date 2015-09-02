@@ -1,5 +1,7 @@
+== 0.4.0.pre
+* Use ruby-2.3 Queue#close
+
 == 0.3.3
 * minor fix when src/dst directory not found
-
 == 0.3.2
 * update for >=sequel-4.10.0 internal syntax (Dataset#clause_sql removed)
