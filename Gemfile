@@ -1,3 +1,6 @@
+raise "You need >= ruby-2.3 (or maybe a Queue with close would work)" unless RUBY_VERSION >= '2.3.0'
+
+# TODO this is for older versions of bundler
 def from_gemrc
   # auto-load from ~/.gemrc
   home_gemrc = Pathname('~/.gemrc').expand_path

@@ -1,4 +1,5 @@
 require 'rspec_syntax'
+require 'pathname'
 
 require Pathname(__dir__) + '../lib/wyrm/core_extensions.rb'
 

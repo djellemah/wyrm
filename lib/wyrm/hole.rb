@@ -20,10 +20,6 @@ module Wyrm
     class Mouth
       include Logger
 
-      def initialize
-        @flushed = false
-      end
-
       # This is a bit weird because io_queue will usually == self
       def encode( obj, io_queue )
         io_queue.enq obj
@@ -37,19 +33,14 @@ module Wyrm
       end
 
       def reset
-        # do this first, so any (hopefully not) remaining waiters don't
-        # go into the blocking deq again.
-        @flushed = false
-
-        # clear any poisons, and release any (hopefully not) remaining waiters
-        queue.clear
+        @queue.andand.clear
+        @queue = nil
       end
 
       # queue could be empty while producer is generating something,
       # so only eof after flush has been called.
       def eof?
-        # queue is not empty if it's been poisoned.
-        @flushed && queue.empty?
+        queue.closed? && queue.empty?
       end
 
       # use a SizedQueue so we don't run out of memory during a big transfer
@@ -67,25 +58,12 @@ module Wyrm
       end
 
       def deq( *args )
-        rv = queue.deq( *args )
-        if rv == :poison
-          poison_queue
-          raise StopIteration
-        end
-        rv
-      end
-
-      def poison_queue
-        # poison the queue. waiters will have to re-queue this.
-        queue << :poison if queue.empty? && queue.num_waiting > 0
+        queue.deq( *args )
       end
 
       # this gets called after dump is finished, by pump
       def flush
-        # do this first, so any non-poisoned waiters will eof
-        # synchronisation is not really important because
-        @flushed = true
-        poison_queue
+        queue.close(exception=true)
       end
     end
 
