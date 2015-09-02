@@ -56,16 +56,15 @@ module Wyrm::SchemaTools
         else
           raise
         end
-
       end
     end
 
     # this should be temporary
-    if tables.sort == foreign_keyed_tables.sort
+    if tables.any? && tables.sort == foreign_keyed_tables.sort
       raise "can't remove #{tables.inspect} because they have mutual foreign keys"
     end
 
-    # recursively delete tables
+    # recursively delete tables. Shuffle as kak workaround for dependency loops.
     drop_tables foreign_keyed_tables.shuffle unless foreign_keyed_tables.empty?
   end
 

@@ -41,6 +41,7 @@ class Wyrm::Restore
   # sequel wants migrations numbered, but it's a bit of an annoyance for this.
   def find_single( glob )
     candidates = Pathname.glob container + glob
+    raise "no candidates for #{glob}. Probably #{container} does not have wyrm files." unless candidates.size == 1
     raise "too many #{candidates.inspect} for #{glob}" unless candidates.size == 1
     candidates.first
   end
