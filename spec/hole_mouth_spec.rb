@@ -10,7 +10,7 @@ else
   describe '#flush' do
     it 'closes the queue' do
       subject.flush
-      subject.queue.should be_empty
+      subject.queue.should be_closed
     end
   end
 
@@ -64,6 +64,12 @@ else
       th.kill
       sleep 0.05
       th.status.should == false
+    end
+
+    it 'raises StopIteration for closed queue' do
+      subject.queue.should be_empty
+      subject.flush
+      ->{subject.deq}.should raise_error(StopIteration)
     end
   end
 
