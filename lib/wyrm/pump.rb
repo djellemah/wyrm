@@ -124,8 +124,8 @@ class Wyrm::Pump
   def paginated_dump( &encode_block )
     records_count = 0
     table_dataset.order(*primary_keys).each_page(page_size) do |page|
-      logger.info{ "#{__method__} #{table_name} #{records_count}" }
-      logger.debug{ page.sql }
+      logger.info "#{__method__} #{table_name} #{records_count}"
+      logger.debug page.sql
       page.each &encode_block
       records_count += page_size
     end
@@ -145,8 +145,8 @@ class Wyrm::Pump
     0.step(table_dataset.count, page_size).each do |offset|
       limit_dataset = table_dataset.select( *primary_keys ).limit( page_size, offset ).order( *primary_keys )
       page = table_dataset.join( limit_dataset, Hash[ primary_keys.map{|f| [f,f]} ] ).order( *primary_keys ).qualify(table_name)
-      logger.info{ "#{__method__} #{table_name} #{offset}" }
-      logger.debug{ page.sql }
+      logger.info "#{__method__} #{table_name} #{offset}"
+      logger.debug page.sql
       page.each &encode_block
     end
   end
@@ -164,14 +164,14 @@ class Wyrm::Pump
     # bigger than max for the last page
     (min..max).step(page_size).each do |offset|
       page = table_dataset.where( id: offset...(offset + page_size) )
-      logger.info{ "#{__method__} #{table_name} #{offset}" }
-      logger.debug{ page.sql }
+      logger.info "#{__method__} #{table_name} #{offset}"
+      logger.debug page.sql
       page.each &encode_block
     end
   end
 
   def stream_dump( &encode_block )
-    logger.debug{ "using result set streaming" }
+    logger.debug "using result set streaming"
 
     # I want to output progress every page_size records,
     # without doing a records_count % page_size every iteration.
@@ -186,8 +186,8 @@ class Wyrm::Pump
           records_count += 1
         end
       ensure
-        logger.info{ "#{__method__} #{table_name} #{records_count}" if records_count < page_size }
-        logger.debug{ "  from #{table_dataset.sql}" }
+        logger.info "#{__method__} #{table_name} #{records_count}" if records_count < page_size
+        logger.debug "  from #{table_dataset.sql}"
       end
     end
   end
@@ -248,8 +248,8 @@ class Wyrm::Pump
 
     return unless dump_matches_columns?( row_enum, columns )
 
-    logger.info{ "#{__method__} inserting to #{table_name} from #{start_row}" }
-    logger.debug{ "  #{columns.inspect}" }
+    logger.info "#{__method__} inserting to #{table_name} from #{start_row}"
+    logger.debug "  #{columns.inspect}"
     rows_restored = 0
 
     if start_row != 0
@@ -284,7 +284,7 @@ class Wyrm::Pump
         end
       end
     end
-    logger.info{ "#{__method__} #{table_name} done. Inserted #{rows_restored}." }
+    logger.info "#{__method__} #{table_name} done. Inserted #{rows_restored}."
     rows_restored
   end
 
