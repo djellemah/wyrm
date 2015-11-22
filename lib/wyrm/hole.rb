@@ -35,6 +35,7 @@ module Wyrm
       DEFAULT_QUEUE_SIZE = 5000
 
       def initialize( queue_size: DEFAULT_QUEUE_SIZE)
+        raise '>= ruby-2.3.0 needed because we use Queue#close' if RUBY_VERSION < '2.3.0'
         @queue_size = queue_size
       end
 
@@ -50,12 +51,7 @@ module Wyrm
       # queue could be empty while producer is generating something,
       # use a SizedQueue so we don't run out of memory during a big transfer
       def queue
-        @queue ||=
-        if RUBY_VERSION == '2.1.0'
-          raise "Queue broken in 2.1.0 possibly related to https://bugs.ruby-lang.org/issues/9302"
-        else
-          SizedQueue.new @queue_size
-        end
+        @queue ||= SizedQueue.new @queue_size
       end
 
       ##########

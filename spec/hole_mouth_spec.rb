@@ -4,9 +4,6 @@ require 'pathname'
 require Pathname(__dir__) + '../lib/wyrm/hole.rb'
 
 describe Wyrm::Hole::Mouth do
-if RUBY_VERSION == '2.1.0'
-  it 'Queue broken on 2.1.0'
-else
   describe '#flush' do
     it 'closes the queue' do
       subject.flush
@@ -72,15 +69,4 @@ else
       ->{subject.deq}.should raise_error(StopIteration)
     end
   end
-
-  describe '#logger' do
-    # this is here because the 2.1.0 without SizeQueue branch
-    # has a logger which nothing else uses
-    it 'works' do
-      Wyrm::Hole::Mouth::RUBY_VERSION = '2.1.0'
-      ->{subject.queue}.should raise_error(/broken in 2.1.0/)
-      Wyrm::Hole::Mouth.send :remove_const, :RUBY_VERSION
-    end
-  end
-end #unless RUBY_VERSION == '2.1.0'
 end
