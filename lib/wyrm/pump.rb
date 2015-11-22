@@ -26,7 +26,7 @@ class Wyrm::Pump
   attr_accessor :io, :page_size, :dry_run
   def dry_run?; dry_run; end
 
-  # These affect cached values
+  # These are affected by cached values
   attr_reader :db, :table_name
 
   def invalidate_cached_members
@@ -235,12 +235,13 @@ class Wyrm::Pump
     false
   end
 
+  # start_row is zero-based
+  #
   # TODO don't generate the full insert, ie leave out the fields
   # because we've already checked that the columns and the table
   # match.
   # TODO generate column names in insert, they might still work
   # if columns have been added to the db, but not the dump.
-  # start_row is zero-based
   def restore( start_row: 0, filename: 'io' )
     columns = table_dataset.columns
     row_enum = each_row

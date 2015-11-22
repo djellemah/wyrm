@@ -27,9 +27,7 @@ class Wyrm::Dump
 
   attr_reader :src_db, :container, :pump
 
-  def same_db
-    false
-  end
+  def same_db; false end
 
   def numbering
     @numbering ||= '000'
