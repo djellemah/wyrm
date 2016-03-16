@@ -77,7 +77,8 @@ module Wyrm
 
     def initialize( src_db, dst_db, drop_tables: true, queue_size: Mouth::DEFAULT_QUEUE_SIZE )
       # called only once per run, so not really a performance issue
-      @options = method(__method__).kwargs_as_hash( binding )
+      @drop_tables = drop_tables
+      @queue_size = queue_size
 
       @src_db = maybe_deebe src_db
       @dst_db = maybe_deebe dst_db
@@ -85,10 +86,11 @@ module Wyrm
       @src_db.extension :schema_dumper
     end
 
-    attr_reader :src_db, :dst_db, :options
+    attr_reader :src_db, :dst_db, :options, :queue_size
+    def drop_tables?; @drop_tables end
 
     def mouth
-      @mouth ||= Mouth.new queue_size: options[:queue_size]
+      @mouth ||= Mouth.new queue_size: queue_size
     end
 
     def pump_options
@@ -136,7 +138,7 @@ module Wyrm
     end
 
     def call
-      if options[:drop_tables]
+      if drop_tables?
         logger.info "dropping tables"
         drop_tables src_db.tables
       end
