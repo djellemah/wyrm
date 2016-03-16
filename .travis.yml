@@ -1,4 +1,4 @@
 language: ruby
-rvm:
-- 2.3
+rvm: []
+# - 2.3 not supported as of 16-Mar-2016. srsly, 3 months after release
 script: bundle exec rspec spec

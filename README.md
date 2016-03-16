@@ -1,4 +1,8 @@
-# Wyrm [![Gem Version](https://badge.fury.io/rb/wyrm.png)](http://badge.fury.io/rb/wyrm) [![Build Status](https://travis-ci.org/djellemah/wyrm.png?branch=master)](https://travis-ci.org/djellemah/wyrm)
+# Wyrm [![Gem Version](https://badge.fury.io/rb/wyrm.png)](http://badge.fury.io/rb/wyrm)
+
+<!---
+[![Build Status](https://travis-ci.org/djellemah/wyrm.png?branch=master)](https://travis-ci.org/djellemah/wyrm)
+-->
 
 Transfer a database from one rdbms to another (eg mysql to postgres). Either via
 a set of files, or direct from one db server to another.
