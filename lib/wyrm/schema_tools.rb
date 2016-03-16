@@ -1,4 +1,3 @@
-require 'fastandand'
 Sequel.extension :migration
 require 'wyrm/module'
 
@@ -8,7 +7,7 @@ require 'wyrm/module'
 module Wyrm::SchemaTools
   # some includers will need to provide a different implementation for this.
   def same_db
-    respond_to?( :dst_db ) && respond_to?( :src_db ) && dst_db.andand.database_type == src_db.andand.database_type
+    respond_to?( :dst_db ) && respond_to?( :src_db ) && dst_db&.database_type == src_db&.database_type
   end
 
   def schema_migration

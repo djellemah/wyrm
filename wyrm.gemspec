@@ -20,7 +20,6 @@ Gem::Specification.new do |spec|
 
   # need this version because clause_sql was moved to _insert_sql, used by pump
   spec.add_runtime_dependency 'sequel', '>= 4.10.0'
-  spec.add_runtime_dependency "fastandand"
 
   spec.add_development_dependency "pry"
   spec.add_development_dependency "pry-byebug"

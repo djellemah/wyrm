@@ -22,7 +22,7 @@ describe SchemaTools do
       lgr
     end
     def initialize( src_db, dst_db )
-      @src_db = src_db.andand.extension :schema_dumper
+      @src_db = src_db&.extension :schema_dumper
       @dst_db = dst_db
     end
     attr_reader :src_db, :dst_db
