@@ -171,7 +171,7 @@ class Wyrm::Pump
   end
 
   def stream_dump( &encode_block )
-    logger.debug "using result set streaming"
+    logger.info "using result set streaming"
 
     # I want to output progress every page_size records,
     # without doing a records_count % page_size every iteration.
@@ -187,7 +187,7 @@ class Wyrm::Pump
         end
       ensure
         logger.info "#{__method__} #{table_name} #{records_count}" if records_count < page_size
-        logger.debug "  from #{table_dataset.sql}"
+        logger.debug "  #{records_count} from #{table_dataset.sql}"
       end
     end
   end
