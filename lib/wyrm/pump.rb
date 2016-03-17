@@ -113,7 +113,8 @@ class Wyrm::Pump
   end
 
   def primary_keys
-    @primary_keys ||= db.schema(table_name).select{|df| df.last[:primary_key]}.map{|df| df.first}
+    # each_with_object([]){...} is only faster for < 3 items in 100000
+    @primary_keys ||= db.schema(table_name).map{|name,column_info| name if column_info[:primary_key]}.compact
   end
 
   def table_dataset
@@ -142,9 +143,10 @@ class Wyrm::Pump
   # http://www.numerati.com/2012/06/26/reading-large-result-sets-with-hibernate-and-mysql/
   def inner_dump( &encode_block )
     # could possibly overrride Dataset#paginate(page_no, page_size, record_count=nil)
-    0.step(table_dataset.count, page_size).each do |offset|
+    on_conditions = primary_keys.map{|f| [f,f]}.to_h
+    (0..table_dataset.count).step(page_size).each do |offset|
       limit_dataset = table_dataset.select( *primary_keys ).limit( page_size, offset ).order( *primary_keys )
-      page = table_dataset.join( limit_dataset, Hash[ primary_keys.map{|f| [f,f]} ] ).order( *primary_keys ).qualify(table_name)
+      page = table_dataset.join( limit_dataset, on_conditions ).order( *primary_keys ).qualify(table_name)
       logger.info "#{__method__} #{table_name} #{offset}"
       logger.debug page.sql
       page.each &encode_block
@@ -218,10 +220,13 @@ class Wyrm::Pump
     case
     when table_dataset.respond_to?( :stream )
       stream_dump &encode_block
+
     when primary_keys.empty?
       paginated_dump &encode_block
+
     when primary_keys.all?{|i| i == :id }
       min_max_dump &encode_block
+
     else
       inner_dump &encode_block
     end
