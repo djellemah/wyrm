@@ -1,3 +1,9 @@
+== 0.4.0
+* Update for released ruby-2.3 Queue#close
+* use &. instead of andand
+* minor tweaks to Pump#inner_dump and Pump#primary_keys
+* pry-debundle for development
+
 == 0.4.0.pre
 * Use ruby-2.3 Queue#close
 
