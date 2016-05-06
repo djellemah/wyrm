@@ -86,7 +86,7 @@ class Wyrm::Restore
       raise "Don't know what to do with #{table_name.inspect}"
     end
 
-    IO.popen "pbzip2 -d -c #{table_file}", &block
+    IO.popen "#{STREAM_DCMP} #{table_file}", &block
   end
 
   def table_files

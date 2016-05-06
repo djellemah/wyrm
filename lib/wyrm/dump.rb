@@ -52,7 +52,7 @@ class Wyrm::Dump
   def write_through_bz2( pathname )
     fio = pathname.open('w')
     # open subprocess in read-write mode
-    zio = IO.popen( "pbzip2 -z", 'r+' )
+    zio = IO.popen( STREAM_COMP, 'r+' )
     copier = Thread.new do
       begin
         IO.copy_stream zio, fio

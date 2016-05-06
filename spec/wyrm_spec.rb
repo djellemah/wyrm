@@ -8,6 +8,6 @@ include Wyrm
 
 describe Wyrm do
   it 'has the right constants' do
-    Wyrm.constants.sort.should == [:Dump, :Hole, :Logger, :Pump, :PumpMaker, :Restore, :SchemaTools, :VERSION].sort
+    Wyrm.constants.sort.should == [:Dump, :Hole, :Logger, :Pump, :PumpMaker, :Restore, :SchemaTools, :VERSION, :STREAM_COMP, :STREAM_DCMP].sort
   end
 end

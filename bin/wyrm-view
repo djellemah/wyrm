@@ -4,16 +4,17 @@ if ARGV.empty? || ARGV.first =~ /^-+(\?|h(elp)?)$/
   puts <<EOF
 Usage: #{$0} dbp_file.dbp[.bz2]
 
-Display contents of dbp file, optionally compressed with bz2.
+Display contents of dbp file in yaml, optionally compressed with bz2.
 EOF
   exit(0)
 end
 
 require 'wyrm/cli'
-Wyrm.sanity_check_pbzip2
+Wyrm.sanity_check_dcmp
 
 require 'pathname'
 require 'yaml'
+require 'sequel' # needed for demarshalling some types
 
 out_block = lambda do |io|
   record_count = 1
@@ -27,7 +28,7 @@ end
 ARGV.map{|a| Pathname(a)}.each do |path|
   puts "# source: #{path}"
   if path.extname == '.bz2'
-    IO.popen "pbzip2 -d -c #{path}", &out_block
+    IO.popen "#{Wyrm::STREAM_DCMP} #{path}", &out_block
   else
     path.open &out_block
   end

@@ -3,7 +3,12 @@
 require 'uri'
 
 if ARGV.size != 2
+  require 'wyrm/version'
+
   puts <<EOF
+
+wyrm-#{Wyrm::VERSION}
+
 Usage: #{$0} src_db|dirname dst_db|dirname
 
 dirname contains a set of wyrm files, or will soon.
@@ -12,6 +17,7 @@ sample db strings:
   postgres://localhost/lotsa_datsa
   mysql://root:pwned@localhost/lotsa_datsa
   mysql2://root:pwned@localhost/lotsa_fastsa_datsa
+
 EOF
   exit(1)
 end
@@ -25,7 +31,7 @@ end
 src, dst = ARGV.map{|arg| URI.parse(arg).extend(FsPath)}
 
 require 'wyrm/cli'
-Wyrm.sanity_check_pbzip2
+Wyrm.sanity_check_dcmp
 
 include Wyrm
 
