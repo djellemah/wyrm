@@ -1,4 +1,6 @@
 language: ruby
-rvm: []
-# - 2.3 not supported as of 16-Mar-2016. srsly, 3 months after release
+rvm:
+  - 2.3.0
+  - 2.3.1
+  # - jruby-9.1.0.0 fails because of db drivers
 script: bundle exec rspec spec

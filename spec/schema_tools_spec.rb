@@ -1,6 +1,5 @@
 require 'rspec_syntax'
 require 'sequel'
-require 'sqlite3'
 
 require Pathname(__dir__) + '../lib/wyrm/schema_tools.rb'
 require Pathname(__dir__) + '../lib/wyrm/logger.rb'
@@ -8,6 +7,8 @@ require Pathname(__dir__) + '../lib/wyrm/logger.rb'
 include Wyrm
 
 describe SchemaTools do
+  include DbConnections
+
   after :each do
     @src_dst = nil
   end
@@ -28,7 +29,7 @@ describe SchemaTools do
     attr_reader :src_db, :dst_db
   end
 
-  def src_dst( src_db: Sequel.sqlite, dst_db: Sequel.sqlite )
+  def src_dst( src_db: sequel_sqlite_db, dst_db: sequel_sqlite_db )
     @src_dst ||= Includer.new src_db, dst_db
   end
 
@@ -46,7 +47,7 @@ describe SchemaTools do
     end
 
     it 'for different db' do
-      src_dst( dst_db: Sequel.postgres ).same_db.should == false
+      src_dst( dst_db: sequel_postgres_db ).same_db.should == false
     end
   end
 
@@ -99,7 +100,7 @@ describe SchemaTools do
     end
 
     it 'cascade for postgres' do
-      src_dst(dst_db: Sequel.postgres, src_db: nil).drop_table_options.should == {cascade: true}
+      src_dst(dst_db: sequel_postgres_db, src_db: nil).drop_table_options.should == {cascade: true}
     end
   end
 
@@ -123,7 +124,7 @@ describe SchemaTools do
       with_dst.dst_db.tables.should be_empty
     end
 
-    if ::SQLite3::SQLITE_VERSION >= "3.6.19"
+    if defined?(::SQLite3) && ::SQLite3::SQLITE_VERSION >= "3.6.19"
       it 'sqlite mutual foreign keys' do
         with_dst.dst_db.create_table(:things){|t| primary_key :id; t.String :name}
         with_dst.dst_db.create_table(:times){|t| primary_key :id; t.foreign_key :thing_id, :things}
@@ -189,7 +190,7 @@ describe SchemaTools do
       with_dst.stub(:index_migration){ 'Sequel.migration{}' }
       with_dst.stub(:fk_migration){ 'Sequel.migration{}' }
 
-      with_dst.dst_db.stub(:database_type){Sequel.postgres.database_type}
+      with_dst.dst_db.stub(:database_type){sequel_postgres_db.database_type}
 
       with_obj = Object.new
       with_dst.dst_db.should_receive(:tables){[with_obj]}

@@ -5,6 +5,8 @@ require Pathname(__dir__) + '../lib/wyrm/pump.rb'
 include Wyrm
 
 describe Pump do
+  include DbConnections
+
   describe '.quacks_like' do
     it 'recognises method' do
       threequal = Pump.quacks_like( :tap )
@@ -27,7 +29,7 @@ describe Pump do
   describe '#db=' do
     it 'invalidates caches' do
       subject.should_receive(:invalidate_cached_members)
-      subject.db = Sequel.sqlite
+      subject.db = sequel_sqlite_db
     end
 
     it 'handles nil db' do
@@ -35,20 +37,21 @@ describe Pump do
     end
 
     it 'adds pagination extension' do
-      db = Sequel.sqlite
+      db = sequel_sqlite_db
       db.should_receive(:extension).with(:pagination)
       subject.db = db
     end
 
     it 'turns on streaming for postgres' do
-      db = Sequel.postgres
+      db = sequel_postgres_db
+      pending "Sequel::Postgres::Database not defined" unless defined?(Sequel::Postgres::Database)
       db.should_receive(:extension).with(:pagination)
       db.should_receive(:extension).with(:pg_streaming)
       subject.db = db
     end
 
     it 'no streaming for non-postgres' do
-      db = Sequel.sqlite
+      db = sequel_sqlite_db
       db.should_receive(:extension).with(:pagination)
       db.should_not_receive(:extension).with(:pg_streaming)
       subject.db = db

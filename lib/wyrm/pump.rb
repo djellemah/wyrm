@@ -50,7 +50,7 @@ class Wyrm::Pump
 
     # turn on postgres streaming if available
     # also gets called for non-postgres dbs, but that seems to be fine.
-    if defined?( Sequel::Postgres ) && @db.is_a?(Sequel::Postgres::Database) && defined?(Sequel::Postgres.supports_streaming?) && Sequel::Postgres.supports_streaming?
+    if defined?( Sequel::Postgres::Database ) && @db.is_a?(Sequel::Postgres::Database) && defined?(Sequel::Postgres.supports_streaming?) && Sequel::Postgres.supports_streaming?
       @db.extension :pg_streaming
       logger.info "Streaming for #{@db.uri}"
     else
