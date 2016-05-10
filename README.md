@@ -30,6 +30,8 @@ Wyrm because:
 
 ## Dependencies
 
+Ruby >= 2.3.0, for Queue#close
+
 You must have a working
 [pbzip2](http://compression.ca/pbzip2/ "Will use all your cores")
 on your path. If you really have to use something else,
