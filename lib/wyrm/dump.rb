@@ -6,14 +6,24 @@ require 'wyrm/schema_tools'
 require 'wyrm/logger'
 
 # Dump a schema and compressed data from a db to a set of files
-#  src_db = Sequel.connect "postgres://localhost:5454/lots"
-#  ds = DumpSchema.new src_db, Pathname('/var/data/lots')
-#  ds.call
+#
+#  Dump["postgres://localhost:5454/lots", '/var/data/lots']
+#
 # TODO possibly use Gem::Package::TarWriter to write tar files
 class Wyrm::Dump
   include Wyrm::PumpMaker
   include Wyrm::SchemaTools
   include Wyrm::Logger
+
+  def self.[]( *args )
+    new(*args).call
+  end
+
+  def call
+    dump_schema
+    dump_tables
+    dump_indexes
+  end
 
   def initialize( src_db, container = nil, pump: nil )
     @container = Pathname.new container || '.'
@@ -99,11 +109,5 @@ class Wyrm::Dump
     src_db.tables.each do |table_name|
       dump_table table_name
     end
-  end
-
-  def call
-    dump_schema
-    dump_tables
-    dump_indexes
   end
 end

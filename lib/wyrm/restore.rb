@@ -8,9 +8,9 @@ require 'wyrm/schema_tools'
 
 # Load a schema from a set of dump files (from DumpSchema)
 # and restore the table data.
-#  dst_db = Sequel.connect "postgres://localhost:5454/lots"
-#  rs = RestoreSchema.new dst_db, '/var/data/lots'
-#  rs.call
+#
+#  Restore["postgres://localhost:5454/lots", '/var/data/lots']
+#
 # TODO the problem with lazy loading the schema files is that
 # errors in indexes and foreign keys will only be picked up at the
 # end of they probably lengthy table restore process.
@@ -19,6 +19,17 @@ class Wyrm::Restore
   include Wyrm::PumpMaker
   include Wyrm::SchemaTools
   include Wyrm::Logger
+
+  def self.[]( *args )
+    new(*args).call
+  end
+
+  def call
+    drop_tables(table_names) if options.drop_tables
+    create_tables
+    restore_tables
+    create_indexes
+  end
 
   def initialize( container, dst_db, pump: nil, drop_tables: false )
     @container = Pathname.new container
@@ -101,12 +112,5 @@ class Wyrm::Restore
     table_files.map do |path|
       path.basename.to_s.split(?.)[0...-2].last.to_sym
     end
-  end
-
-  def call
-    drop_tables(table_names) if options.drop_tables
-    create_tables
-    restore_tables
-    create_indexes
   end
 end
