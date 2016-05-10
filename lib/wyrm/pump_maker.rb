@@ -11,7 +11,7 @@ module Wyrm::PumpMaker
   end
 
   def make_pump( db, pump_thing )
-    call_or_self(pump_thing) || Pump.new( db: db )
+    call_or_self(pump_thing) || Wyrm::Pump.new( db: db )
   end
 
   def maybe_deebe( db_or_string )
