@@ -1,3 +1,7 @@
+== 0.4.2
+* special case for jruby closing popen stream
+* use modules better
+
 == 0.4.1
 * Improve docs and examples
 * make pbzip2 somewhat configurable.
