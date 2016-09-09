@@ -109,7 +109,7 @@ Sequel.migration{ change{ eval table_schema } }.apply hole.dst_db, :up
 hole.transfer_table :the_stuff_you_want
 
 # it's just Sequel...
-hold.dst_db[:the_stuff_you_want].where( some_thing: /a pattern/ ).limit(10).all
+hole.dst_db[:the_stuff_you_want].where( some_thing: /a pattern/ ).limit(10).all
 ```
 
 Get to the dumped rows:
