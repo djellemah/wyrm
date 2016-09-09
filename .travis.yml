@@ -2,5 +2,5 @@ language: ruby
 rvm:
   - 2.3.0
   - 2.3.1
-  # - jruby-9.1.0.0 fails because of db drivers
+  - jruby-9.1.2.0
 script: bundle exec rspec spec
